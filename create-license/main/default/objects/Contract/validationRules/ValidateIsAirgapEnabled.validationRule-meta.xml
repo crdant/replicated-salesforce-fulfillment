@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ValidateIsAirgapEnabled</fullName>
+    <active>true</active>
+    <description>Ensure the airgap entitlement can only be enabled when the Admin Console entitlement is enabled</description>
+    <errorConditionFormula>AND( IsAirgapEnabled__c  = TRUE, NOT( IsAdminConsoleEnabled__c ))</errorConditionFormula>
+    <errorDisplayField>IsAirgapEnabled__c</errorDisplayField>
+    <errorMessage>Enabling airgap requires the Admin Console also be enabled</errorMessage>
+</ValidationRule>

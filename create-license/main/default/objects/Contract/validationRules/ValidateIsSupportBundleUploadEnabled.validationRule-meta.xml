@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ValidateIsSupportBundleUploadEnabled</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND( IsSupportBundleUploadEnabled__c  = TRUE, NOT( IsAdminConsoleEnabled__c ))</errorConditionFormula>
+    <errorDisplayField>IsSupportBundleUploadEnabled__c</errorDisplayField>
+    <errorMessage>Enabling support bundle upload requires the Admin Console also be enabled</errorMessage>
+</ValidationRule>

@@ -1,0 +1,12 @@
+{
+  "packageDirectories": [
+    {
+      "path": "create-license",
+      "default": true
+    }
+  ],
+  "name": "replicated-salesforce-trigger",
+  "namespace": "",
+  "sfdcLoginUrl": "https://shortriblabs-dev-ed.develop.my.salesforce.com",
+  "sourceApiVersion": "61.0"
+}

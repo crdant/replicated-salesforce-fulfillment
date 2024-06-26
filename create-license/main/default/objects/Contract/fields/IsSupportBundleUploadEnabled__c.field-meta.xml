@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>IsSupportBundleUploadEnabled__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Customer can directly upload support bundles from the Admin Console when their installation is online</description>
+    <inlineHelpText>Include support bundle upload in customer license</inlineHelpText>
+    <label>Support Bundle Upload</label>
+    <trackHistory>false</trackHistory>
+    <type>Checkbox</type>
+</CustomField>
