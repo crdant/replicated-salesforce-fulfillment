@@ -27,11 +27,18 @@ public class ReplicatedPlatform {
         }
 
         System.debug('License ID: ' + licenseId);
-        return licenseId ;
+        return licenseId;
     }
 
     public String createLicense(Contract contract) {
-        Customer customer = new Customer(new Application('2Ukd6bgLamUYOegqsNOPfjpfQVC'), contract);
+        ContractLineItem coreProduct = [SELECT Application__c, ReleaseChannel__c 
+                                        FROM ContractLineItem 
+                                        WHERE ContractId = :contract.Id
+                                          AND Product2Id in ( SELECT Id FROM Product2 WHERE ProductCode IN ('slackernews-standard', 'slackernews-lts') )
+                                        LIMIT 1];
+        
+        Application app = new Application(coreProduct.Application__c, coreProduct.ReleaseChannel__c);
+        Customer customer = new Customer(app, contract);
         System.debug('Creating license for customer: ' + customer.name);
 
         HttpRequest req = new HttpRequest();
@@ -51,15 +58,29 @@ public class ReplicatedPlatform {
             return null;
         }
 
-        System.debug('parsing reponse for the license id');
-        return parseLicenseId(res.getBody()); 
+        System.debug('Parsing response for the license id');
+        return parseLicenseId(res.getBody());
     }
 
     public class Application {
         public String id { get; set; }
+        public String channel { get; set; }
 
-        public Application(String id) {
+        public Application(String id, String channel) {
             this.id = id;
+            this.channel = channel;
+        }
+    }
+
+    public class Entitlement {
+        public String name { get; set; }
+        public Integer value { get; set; }
+        public Boolean isDefualt { get; set; }
+
+        public Entitlement(String name, Integer value) {
+            this.name = name;
+            this.value = value;
+            this.isDefault = false;
         }
     }
 
@@ -83,17 +104,29 @@ public class ReplicatedPlatform {
 
         // Constructor
         public Customer(Application app, Contract contract) {
-            Account account = [ SELECT Id, Name FROM Account WHERE Id = :contract.AccountId LIMIT 1 ];
+            Account account = [SELECT Id, Name FROM Account WHERE Id = :contract.AccountId LIMIT 1];
             Time midnight = Time.newInstance(0,0,0,0);
             DateTime expirationDate = (contract.EndDate != null) ? Datetime.newInstance(contract.EndDate, midnight) : null;
+            Integer userCount = 100;
+
+            List<ContractLineItem> lineItems = [SELECT Quantity
+                                                FROM ContractLineItem 
+                                                WHERE ContractId = :contract.Id
+                                                  AND Product2Id in ( SELECT Id FROM Product2 WHERE ProductCode IN ('slackernews-standard', 'slackernews-lts') )];
+            for (ContractLineItem item : lineItems) {
+                userCount += item.Quantity;
+            }
+
+            List<Entitlement> entitlements = new List<Entitlement>();
+            entitlements.add(new Entitlement('member_count_max', userCount));
 
             this.name = account.Name;
             this.custom_id = account.Id;
             this.app_id = app.id;
-            this.channel_id = '2Ukd6ZSK5i9We0m9WznyBI19RtM';
+            this.channel_id = app.channel;
             this.email = 'test@example.com';
-            this.entitlementValues = new List<Object>(); // Initialize as an empty list
-            this.expires_at = ( expirationDate != null ) ? expirationDate.format('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'') : null;
+            this.entitlementValues = entitlements; // Initialize as an empty list
+            this.expires_at = (expirationDate != null) ? expirationDate.format('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'') : null;
             this.is_airgap_enabled = contract.IsAirgapEnabled__c;
             this.is_geoaxis_supported = false;
             this.is_gitops_supported = false;
