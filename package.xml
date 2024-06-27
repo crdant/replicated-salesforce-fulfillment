@@ -28,41 +28,19 @@
         <name>CustomObject</name>  
     </types>
     <types>
-        <members>Contract-Contract Layout</members>
-        <members>Opportunity-Opportunity %28Marketing%29 Layout</members>
-        <members>Opportunity-Opportunity %28Sales%29 Layout</members>
-        <members>Opportunity-Opportunity %28Support%29 Layout</members>
-        <members>Opportunity-Opportunity Layout</members>
+        <members>Order-Order Layout</members>
         <members>Product2-Product Layout</members>
         <name>Layout</name>
     </types>
     <types>
         <members>Product2.Application__c</members>
         <members>Product2.ReleaseChannel__c</members>
-        <members>Opportunity.IsAdminConsoleEnabled__c</members>
-        <members>Opportunity.IsAirgapEnabled__c</members>
-        <members>Opportunity.IsEmbeddedClusterEnabled__c</members>
-        <members>Opportunity.IsSnapshotSupported__c</members>
-        <members>Opportunity.IsSupportBundleUploadEnabled__c</members>
-        <members>Contract.OrderId__c</members>
-        <members>Contract.LicenseId__c</members>
-        <members>Contract.IsAdminConsoleEnabled__c</members>
-        <members>Contract.IsAirgapEnabled__c</members>
-        <members>Contract.IsEmbeddedClusterEnabled__c</members>
-        <members>Contract.IsSnapshotSupported__c</members>
-        <members>Contract.IsSupportBundleUploadEnabled__c</members>
+        <members>Order.IsAdminConsoleEnabled__c</members>
+        <members>Order.IsAirgapEnabled__c</members>
+        <members>Order.IsEmbeddedClusterEnabled__c</members>
+        <members>Order.IsSnapshotSupported__c</members>
+        <members>Order.IsSupportBundleUploadEnabled__c</members>
         <name>CustomField</name>
-    </types>
-    <types>
-        <members>Opportunity.ValidateIsAirgapEnabled</members>
-        <members>Opportunity.ValidateIsEmbeddedClusterEnabled</members>
-        <members>Opportunity.ValidateIsSnapshotSupported</members>
-        <members>Opportunity.ValidateIsSupportBundleUploadEnabled</members>
-        <members>Contract.ValidateIsAirgapEnabled</members>
-        <members>Contract.ValidateIsEmbeddedClusterEnabled</members>
-        <members>Contract.ValidateIsSnapshotSupported</members>
-        <members>Contract.ValidateIsSupportBundleUploadEnabled</members>
-        <name>ValidationRule</name>
     </types>
     <version>61.0</version>
 </Package>
