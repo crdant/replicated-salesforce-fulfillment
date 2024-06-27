@@ -1,8 +1,8 @@
 public class ReplicatedLicense implements Queueable, Database.AllowsCallouts {
-    private Contract contract;
+    private Order order;
 
-    public ReplicatedLicense(Contract contract) {
-        this.contract = contract;
+    public ReplicatedLicense(Order order) {
+        this.order = order;
     }
 
     public void execute(QueueableContext context) {
@@ -14,6 +14,6 @@ public class ReplicatedLicense implements Queueable, Database.AllowsCallouts {
         ];
 
         ReplicatedPlatform platform = new ReplicatedPlatform(defaultCredential);
-        platform.createLicense(this.contract);
+        platform.createLicense(this.order);
     }
 }

@@ -30,15 +30,15 @@ public class ReplicatedPlatform {
         return licenseId;
     }
 
-    public String createLicense(Contract contract) {
-        ContractLineItem coreProduct = [SELECT Application__c, ReleaseChannel__c 
-                                        FROM ContractLineItem 
-                                        WHERE ContractId = :contract.Id
-                                          AND Product2Id in ( SELECT Id FROM Product2 WHERE ProductCode IN ('slackernews-standard', 'slackernews-lts') )
-                                        LIMIT 1];
+    public String createLicense(Order order) {
+        Product2 coreProduct = [SELECT Product2.ProductCode, Product2.Application__c, Product2.ReleaseChannel__c 
+                                FROM Product2
+                                WHERE Id IN (SELECT Product2Id FROM OrderItem WHERE OrderId = :order.Id)
+                                  AND Product2.ProductCode <> 'slackernews-users' 
+                                LIMIT 1];
         
-        Application app = new Application(coreProduct.Application__c, coreProduct.ReleaseChannel__c);
-        Customer customer = new Customer(app, contract);
+        Application app = new Application(coreProduct.Application__c, coreProduct.ReleaseChannel__c, coreProduct.ProductCode);
+        Customer customer = new Customer(app, order);
         System.debug('Creating license for customer: ' + customer.name);
 
         HttpRequest req = new HttpRequest();
@@ -65,23 +65,25 @@ public class ReplicatedPlatform {
     public class Application {
         public String id { get; set; }
         public String channel { get; set; }
+        public String productCode { get; set; }
 
-        public Application(String id, String channel) {
+        public Application(String id, String channel, String productCode) {
             this.id = id;
             this.channel = channel;
+            this.productCode = productCode;
         }
     }
 
     public class Entitlement {
         public String name { get; set; }
-        public Integer value { get; set; }
-        public Boolean isDefualt { get; set; }
+        public String value { get; set; }
+        public Boolean isDefault { get; set; }
 
-        public Entitlement(String name, Integer value) {
+        public Entitlement(String name, String value) {
             this.name = name;
             this.value = value;
             this.isDefault = false;
-        }
+    }
     }
 
     public class Customer {
@@ -103,39 +105,62 @@ public class ReplicatedPlatform {
         public String type { get; set; }
 
         // Constructor
-        public Customer(Application app, Contract contract) {
-            Account account = [SELECT Id, Name FROM Account WHERE Id = :contract.AccountId LIMIT 1];
+        public Customer(Application app, Order order) {
+            Account account = [SELECT Id, Name FROM Account WHERE Id = :order.AccountId LIMIT 1];
             Time midnight = Time.newInstance(0,0,0,0);
-            DateTime expirationDate = (contract.EndDate != null) ? Datetime.newInstance(contract.EndDate, midnight) : null;
+            DateTime expirationDate = (order.EndDate != null) ? Datetime.newInstance(order.EndDate, midnight) : null;
             Integer userCount = 100;
 
-            List<ContractLineItem> lineItems = [SELECT Quantity
-                                                FROM ContractLineItem 
-                                                WHERE ContractId = :contract.Id
-                                                  AND Product2Id in ( SELECT Id FROM Product2 WHERE ProductCode IN ('slackernews-standard', 'slackernews-lts') )];
-            for (ContractLineItem item : lineItems) {
-                userCount += item.Quantity;
+            Contact shipToContact = [SELECT Email 
+                                       FROM Contact 
+                                       WHERE Id IN (SELECT ShipToContactId FROM Order WHERE Id = :order.Id)
+                                       LIMIT 1];
+
+            List<OrderItem> userPacks = [SELECT Quantity
+                                         FROM OrderItem 
+                                         WHERE OrderId = :order.Id 
+                                           AND Product2Id IN (SELECT Id FROM Product2 WHERE ProductCode IN ('slackernews-users'))];
+            for (OrderItem item : userPacks) {
+                userCount += item.Quantity.IntValue();
             }
 
             List<Entitlement> entitlements = new List<Entitlement>();
-            entitlements.add(new Entitlement('member_count_max', userCount));
+            entitlements.add(new Entitlement('member_count_max', String.ValueOf(userCount)));
 
             this.name = account.Name;
             this.custom_id = account.Id;
             this.app_id = app.id;
             this.channel_id = app.channel;
-            this.email = 'test@example.com';
+            this.email = shipToContact.Email;
             this.entitlementValues = entitlements; // Initialize as an empty list
             this.expires_at = (expirationDate != null) ? expirationDate.format('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'') : null;
-            this.is_airgap_enabled = contract.IsAirgapEnabled__c;
             this.is_geoaxis_supported = false;
             this.is_gitops_supported = false;
-            this.is_helmvm_download_enabled = contract.IsEmbeddedClusterEnabled__c;
             this.is_identity_service_supported = false;
-            this.is_kots_install_enabled = contract.IsAdminConsoleEnabled__c;
-            this.is_snapshot_supported = contract.IsSnapshotSupported__c;
-            this.is_support_bundle_upload_enabled = contract.IsSupportBundleUploadEnabled__c;
+            this.is_support_bundle_upload_enabled = true;
             this.type = 'prod';
+
+            if (app.productCode == 'slackernews-admin-console' || app.productCode == 'slackernews-admin-console-lts') {
+                this.is_kots_install_enabled = true;
+                this.is_helmvm_download_enabled = false;
+                this.is_airgap_enabled = false;
+                this.is_snapshot_supported = true ;
+            } else if (app.productCode == 'slackernes-embedded-cluster' || app.productCode == 'slackernes-embedded-cluster-lts') {
+                this.is_kots_install_enabled = true;
+                this.is_helmvm_download_enabled = true;
+                this.is_airgap_enabled = false;
+                this.is_snapshot_supported = true ;
+            } else if (app.productCode == 'slackernews-airgap' || app.productCode == 'slackernews-airgap-lts') {
+                this.is_airgap_enabled = true;
+                this.is_kots_install_enabled = true;
+                this.is_helmvm_download_enabled = true;
+                this.is_snapshot_supported = true ;
+            } else {
+                this.is_kots_install_enabled = false;
+                this.is_helmvm_download_enabled = false;
+                this.is_airgap_enabled = false;
+                this.is_snapshot_supported = false ;
+            }
         }
     }
 

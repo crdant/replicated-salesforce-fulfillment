@@ -1,7 +1,7 @@
-trigger CreateLicense on Contract (after update) {
-    for (Contract contract : Trigger.new) {
-        if (contract.Status == 'Executed' && Trigger.oldMap.get(contract.Id).Status != 'Executed') {
-            System.enqueueJob(new ReplicatedLicense(contract));
+trigger CreateLicense on Order (after update) {
+    for (Order order : Trigger.new) {
+        if (order.Status == 'Activated' && Trigger.oldMap.get(order.Id).Status != 'Activated') {
+            System.enqueueJob(new ReplicatedLicense(order));
         }
     }
 }
