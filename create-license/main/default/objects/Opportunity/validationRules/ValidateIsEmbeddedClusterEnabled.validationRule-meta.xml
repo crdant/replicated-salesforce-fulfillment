@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>ValidateIsEmbeddedClusterEnabled</fullName>
-    <active>true</active>
-    <description>Ensure the airgap entitlement can only be enabled when the Admin Console entitlement is enabled</description>
-    <errorConditionFormula>AND( IsEmbeddedClusterEnabled__c  = TRUE, NOT( IsAdminConsoleEnabled__c ))</errorConditionFormula>
-    <errorDisplayField>IsEmbeddedClusterEnabled__c</errorDisplayField>
-    <errorMessage>Enabling the virtual appliance requires the Admin Console also be enabled</errorMessage>
-</ValidationRule>

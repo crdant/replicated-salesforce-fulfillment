@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ReleaseChannel__c</fullName>
+    <description>The release channel ID on the Replicated Vendor Portal</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Please set the release channel</inlineHelpText>
+    <label>Release Channel</label>
+    <length>255</length>
+    <required>false</required>
+    <securityClassification>Internal</securityClassification>
+    <trackHistory>false</trackHistory>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

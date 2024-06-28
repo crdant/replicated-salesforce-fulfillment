@@ -26,12 +26,50 @@ public class ReplicatedPlatform {
             }
         }
 
-        System.debug('License ID: ' + licenseId);
-        return licenseId ;
+        return licenseId;
     }
 
-    public String createLicense(Contract contract) {
-        Customer customer = new Customer(new Application('2Ukd6bgLamUYOegqsNOPfjpfQVC'), contract);
+    public Boolean customerExists(OrderTerms terms) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/customers/search');
+        req.setMethod('POST');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('content-type', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+        
+        String query = 'customId:' + terms.accountId();
+        String requestBody = '{"app_id":"' + terms.applicationId() + '","query":"' + query + '","include_paid":true,"include_active":true,"include_inactive":true}';
+        req.setBody(requestBody);
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if (res.getStatusCode() == 200) {
+            String responseBody = res.getBody();
+            System.debug('Response body: ' + responseBody);
+            
+            // Parse the JSON response
+            Map<String, Object> responseMap = (Map<String, Object>) JSON.deserializeUntyped(responseBody);
+            
+            // Check the total_hits field
+            if (responseMap.containsKey('total_hits')) {
+                Integer totalHits = (Integer) responseMap.get('total_hits');
+                if (totalHits == 0) {
+                    return false;
+                } else {
+                    return true ;
+                }
+            } else {
+                throw new ReplicatedAPIException('Error parsing response from Replicated API');
+            }
+        } else {
+            System.debug('Error: ' + res.getStatus() + ' - ' + res.getStatusCode() + ' - ' + res.getBody());
+            throw new ReplicatedAPIException('Error looking for existing Replicated customer ' + res.getStatus() + ' - ' + res.getStatusCode() + ' - ' + res.getBody());
+        }
+    }
+
+    public String createLicense(OrderTerms terms) {
+        Customer customer = new Customer(terms);
         System.debug('Creating license for customer: ' + customer.name);
 
         HttpRequest req = new HttpRequest();
@@ -51,16 +89,19 @@ public class ReplicatedPlatform {
             return null;
         }
 
-        System.debug('parsing reponse for the license id');
-        return parseLicenseId(res.getBody()); 
+        return parseLicenseId(res.getBody());
     }
 
-    public class Application {
-        public String id { get; set; }
+    public class Entitlement {
+        public String name { get; set; }
+        public String value { get; set; }
+        public Boolean isDefault { get; set; }
 
-        public Application(String id) {
-            this.id = id;
-        }
+        public Entitlement(String name, String value) {
+            this.name = name;
+            this.value = value;
+            this.isDefault = false;
+    }
     }
 
     public class Customer {
@@ -74,36 +115,43 @@ public class ReplicatedPlatform {
         public Boolean is_airgap_enabled { get; set; }
         public Boolean is_geoaxis_supported { get; set; }
         public Boolean is_gitops_supported { get; set; }
-        public Boolean is_helmvm_download_enabled { get; set; }
+        public Boolean is_embedded_cluster_download_enabled { get; set; }
         public Boolean is_identity_service_supported { get; set; }
         public Boolean is_kots_install_enabled { get; set; }
-        public Boolean is_snapshot_supported { get; set; }
         public Boolean is_support_bundle_upload_enabled { get; set; }
+        public Boolean is_snapshot_supported { get; set; }
+        public Boolean is_disaster_recovery_supported { get; set; }
         public String type { get; set; }
 
         // Constructor
-        public Customer(Application app, Contract contract) {
-            Account account = [ SELECT Id, Name FROM Account WHERE Id = :contract.AccountId LIMIT 1 ];
+        public Customer(OrderTerms terms) {
             Time midnight = Time.newInstance(0,0,0,0);
-            DateTime expirationDate = (contract.EndDate != null) ? Datetime.newInstance(contract.EndDate, midnight) : null;
+            DateTime expirationDate = Datetime.newInstance(terms.endDate(), midnight) ;
+            Integer userCount = terms.userCount();
 
-            this.name = account.Name;
-            this.custom_id = account.Id;
-            this.app_id = app.id;
-            this.channel_id = '2Ukd6ZSK5i9We0m9WznyBI19RtM';
-            this.email = 'test@example.com';
-            this.entitlementValues = new List<Object>(); // Initialize as an empty list
-            this.expires_at = ( expirationDate != null ) ? expirationDate.format('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'') : null;
-            this.is_airgap_enabled = contract.IsAirgapEnabled__c;
+            List<Entitlement> entitlements = new List<Entitlement>();
+            entitlements.add(new Entitlement('member_count_max', String.ValueOf(userCount)));
+
+            this.name = terms.customerName();
+            this.custom_id = terms.accountId();
+            this.app_id = terms.applicationId();
+            this.channel_id = terms.channelId();
+            this.email = terms.customerEmail();
+            this.entitlementValues = entitlements; // Initialize as an empty list
+            this.expires_at = (expirationDate != null) ? expirationDate.format('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'') : null;
             this.is_geoaxis_supported = false;
             this.is_gitops_supported = false;
-            this.is_helmvm_download_enabled = contract.IsEmbeddedClusterEnabled__c;
             this.is_identity_service_supported = false;
-            this.is_kots_install_enabled = contract.IsAdminConsoleEnabled__c;
-            this.is_snapshot_supported = contract.IsSnapshotSupported__c;
-            this.is_support_bundle_upload_enabled = contract.IsSupportBundleUploadEnabled__c;
             this.type = 'prod';
+
+            this.is_kots_install_enabled = terms.isAdminConsoleEnabled();
+            this.is_embedded_cluster_download_enabled = terms.isEmbeddedClusterEnabled();
+            this.is_airgap_enabled = terms.isAirgapEnabled();
+            this.is_support_bundle_upload_enabled = terms.isSupportBundleUploadEnabled() ;
+            this.is_snapshot_supported = terms.isSnapshotSupported() ;
+            this.is_disaster_recovery_supported = terms.isDisasterRecoverySupported() ;
         }
     }
 
+    public class ReplicatedAPIException extends Exception {}
 }

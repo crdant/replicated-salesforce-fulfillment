@@ -18,7 +18,8 @@
         <name>ApexClass</name>
     </types>
     <types>
-        <members>CreateContractOnOpportunityClosedWon</members>
+        <members>CloseWonOpportunity</members>
+        <members>ActivateOrder</members>
         <members>CreateLicense</members>
         <name>ApexTrigger</name>
     </types>
@@ -27,35 +28,27 @@
         <name>CustomObject</name>  
     </types>
     <types>
-        <members>Contract-Contract Layout</members>
-        <members>Opportunity-Opportunity %28Marketing%29 Layout</members>
-        <members>Opportunity-Opportunity %28Sales%29 Layout</members>
-        <members>Opportunity-Opportunity %28Support%29 Layout</members>
-        <members>Opportunity-Opportunity Layout</members>
+        <members>Order-Order Layout</members>
+        <members>Product2-Product Layout</members>
         <name>Layout</name>
     </types>
     <types>
-        <members>Opportunity.IsAdminConsoleEnabled__c</members>
-        <members>Opportunity.IsAirgapEnabled__c</members>
-        <members>Opportunity.IsEmbeddedClusterEnabled__c</members>
-        <members>Opportunity.IsSnapshotSupported__c</members>
-        <members>Opportunity.IsSupportBundleUploadEnabled__c</members>
-        <members>Contract.IsAdminConsoleEnabled__c</members>
-        <members>Contract.IsAirgapEnabled__c</members>
-        <members>Contract.IsEmbeddedClusterEnabled__c</members>
-        <members>Contract.IsSnapshotSupported__c</members>
-        <members>Contract.IsSupportBundleUploadEnabled__c</members>
+        <members>Product2.Application__c</members>
+        <members>Product2.ReleaseChannel__c</members>
+        <members>Product2.IsAdminConsoleEnabled__c</members>
+        <members>Product2.IsAirgapEnabled__c</members>
+        <members>Product2.IsEmbeddedClusterEnabled__c</members>
+        <members>Product2.IsAddOn__c</members>
+        <members>Order.LicenseId__c</members>
         <name>CustomField</name>
     </types>
     <types>
-        <members>Opportunity.ValidateIsAirgapEnabled</members>
-        <members>Opportunity.ValidateIsEmbeddedClusterEnabled</members>
-        <members>Opportunity.ValidateIsSnapshotSupported</members>
-        <members>Opportunity.ValidateIsSupportBundleUploadEnabled</members>
-        <members>Contract.ValidateIsAirgapEnabled</members>
-        <members>Contract.ValidateIsEmbeddedClusterEnabled</members>
-        <members>Contract.ValidateIsSnapshotSupported</members>
-        <members>Contract.ValidateIsSupportBundleUploadEnabled</members>
+        <members>Product2.ValidateIsAirgapEnabled</members>
+        <members>Product2.ValidateIsEmbeddedClusterEnabled</members>
+        <members>Product2.ValidateIsSnapshotSupported</members>
+        <members>Product2.ValidateIsSupportBundleUploadEnabled</members>
+        <members>Product2.ValidateNoEntitlementsForAddOns</members>
+        <members>Opportunity.ValidateSingleCoreProduct</members>
         <name>ValidationRule</name>
     </types>
     <version>61.0</version>
