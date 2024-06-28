@@ -18,8 +18,8 @@
         <name>ApexClass</name>
     </types>
     <types>
-        <members>GenerateOrder</members>
-        <members>ExecuteOrder</members>
+        <members>CloseWonOpportunity</members>
+        <members>ActivateOrder</members>
         <members>CreateLicense</members>
         <name>ApexTrigger</name>
     </types>
@@ -35,12 +35,21 @@
     <types>
         <members>Product2.Application__c</members>
         <members>Product2.ReleaseChannel__c</members>
-        <members>Order.IsAdminConsoleEnabled__c</members>
-        <members>Order.IsAirgapEnabled__c</members>
-        <members>Order.IsEmbeddedClusterEnabled__c</members>
-        <members>Order.IsSnapshotSupported__c</members>
-        <members>Order.IsSupportBundleUploadEnabled__c</members>
+        <members>Product2.IsAdminConsoleEnabled__c</members>
+        <members>Product2.IsAirgapEnabled__c</members>
+        <members>Product2.IsEmbeddedClusterEnabled__c</members>
+        <members>Product2.IsAddOn__c</members>
+        <members>Order.LicenseId__c</members>
         <name>CustomField</name>
+    </types>
+    <types>
+        <members>Product2.ValidateIsAirgapEnabled</members>
+        <members>Product2.ValidateIsEmbeddedClusterEnabled</members>
+        <members>Product2.ValidateIsSnapshotSupported</members>
+        <members>Product2.ValidateIsSupportBundleUploadEnabled</members>
+        <members>Product2.ValidateNoEntitlementsForAddOns</members>
+        <members>Opportunity.ValidateSingleCoreProduct</members>
+        <name>ValidationRule</name>
     </types>
     <version>61.0</version>
 </Package>

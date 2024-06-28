@@ -5,7 +5,6 @@
     <description>Customer can take snaphots backup/restore of the application</description>
     <inlineHelpText>Include snapshots in customer license</inlineHelpText>
     <label>Snapshots</label>
-    <trackFeedHistory>false</trackFeedHistory>
-    <trackTrending>false</trackTrending>
+    <trackHistory>false</trackHistory>
     <type>Checkbox</type>
 </CustomField>

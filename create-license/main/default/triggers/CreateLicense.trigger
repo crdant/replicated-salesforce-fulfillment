@@ -1,7 +1,9 @@
 trigger CreateLicense on Order (after update) {
     for (Order order : Trigger.new) {
+        System.debug('Creating Licensse for ' + order.Id + ', status ' + order.Status);
         if (order.Status == 'Activated' && Trigger.oldMap.get(order.Id).Status != 'Activated') {
-            System.enqueueJob(new ReplicatedLicense(order));
+            OrderTerms terms = new OrderTerms(order);
+            System.enqueueJob(new ReplicatedLicense(terms));
         }
     }
 }

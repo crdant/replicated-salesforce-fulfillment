@@ -5,7 +5,6 @@
     <description>Customer can use a Kubernetes appliance to install the application</description>
     <inlineHelpText>Include virtual appliance install in customer license</inlineHelpText>
     <label>Kubernetes Appliance</label>
-    <trackFeedHistory>false</trackFeedHistory>
-    <trackTrending>false</trackTrending>
+    <trackHistory>false</trackHistory>
     <type>Checkbox</type>
 </CustomField>

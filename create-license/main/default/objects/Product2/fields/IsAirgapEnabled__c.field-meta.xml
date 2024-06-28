@@ -5,7 +5,6 @@
     <description>Customer is allowed to install into airgap environments</description>
     <inlineHelpText>Include airgap installation in customer license?</inlineHelpText>
     <label>Airgap</label>
-    <trackFeedHistory>false</trackFeedHistory>
-    <trackTrending>false</trackTrending>
+    <trackHistory>false</trackHistory>
     <type>Checkbox</type>
 </CustomField>

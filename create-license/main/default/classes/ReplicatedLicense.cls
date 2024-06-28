@@ -1,8 +1,8 @@
 public class ReplicatedLicense implements Queueable, Database.AllowsCallouts {
-    private Order order;
+    private OrderTerms terms;
 
-    public ReplicatedLicense(Order order) {
-        this.order = order;
+    public ReplicatedLicense(OrderTerms terms) {
+        this.terms = terms;
     }
 
     public void execute(QueueableContext context) {
@@ -14,6 +14,17 @@ public class ReplicatedLicense implements Queueable, Database.AllowsCallouts {
         ];
 
         ReplicatedPlatform platform = new ReplicatedPlatform(defaultCredential);
-        platform.createLicense(this.order);
+        if ( !platform.customerExists(this.terms) ) {
+            String licenseId = platform.createLicense(this.terms);
+
+            Id orderId = this.terms.orderId();
+            Order order = [SELECT Id, LicenseId__c FROM Order WHERE Id = :orderId LIMIT 1];
+            order.LicenseId__c = licenseId;
+            update order ;
+            return;
+        } else {
+          System.debug('TO DO: Handle existing customer');
+        }
+        
     }
 }

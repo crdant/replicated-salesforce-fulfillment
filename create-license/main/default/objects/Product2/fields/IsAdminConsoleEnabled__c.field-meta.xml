@@ -5,7 +5,6 @@
     <description>Customer can use the Admin Console to install and manage the application</description>
     <inlineHelpText>Include Admin Console in customer license</inlineHelpText>
     <label>Admin Console</label>
-    <trackFeedHistory>false</trackFeedHistory>
-    <trackTrending>false</trackTrending>
+    <trackHistory>false</trackHistory>
     <type>Checkbox</type>
 </CustomField>

@@ -26,19 +26,50 @@ public class ReplicatedPlatform {
             }
         }
 
-        System.debug('License ID: ' + licenseId);
         return licenseId;
     }
 
-    public String createLicense(Order order) {
-        Product2 coreProduct = [SELECT Product2.ProductCode, Product2.Application__c, Product2.ReleaseChannel__c 
-                                FROM Product2
-                                WHERE Id IN (SELECT Product2Id FROM OrderItem WHERE OrderId = :order.Id)
-                                  AND Product2.ProductCode <> 'slackernews-users' 
-                                LIMIT 1];
+    public Boolean customerExists(OrderTerms terms) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/customers/search');
+        req.setMethod('POST');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('content-type', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
         
-        Application app = new Application(coreProduct.Application__c, coreProduct.ReleaseChannel__c, coreProduct.ProductCode);
-        Customer customer = new Customer(app, order);
+        String query = 'customId:' + terms.accountId();
+        String requestBody = '{"app_id":"' + terms.applicationId() + '","query":"' + query + '","include_paid":true,"include_active":true,"include_inactive":true}';
+        req.setBody(requestBody);
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if (res.getStatusCode() == 200) {
+            String responseBody = res.getBody();
+            System.debug('Response body: ' + responseBody);
+            
+            // Parse the JSON response
+            Map<String, Object> responseMap = (Map<String, Object>) JSON.deserializeUntyped(responseBody);
+            
+            // Check the total_hits field
+            if (responseMap.containsKey('total_hits')) {
+                Integer totalHits = (Integer) responseMap.get('total_hits');
+                if (totalHits == 0) {
+                    return false;
+                } else {
+                    return true ;
+                }
+            } else {
+                throw new ReplicatedAPIException('Error parsing response from Replicated API');
+            }
+        } else {
+            System.debug('Error: ' + res.getStatus() + ' - ' + res.getStatusCode() + ' - ' + res.getBody());
+            throw new ReplicatedAPIException('Error looking for existing Replicated customer ' + res.getStatus() + ' - ' + res.getStatusCode() + ' - ' + res.getBody());
+        }
+    }
+
+    public String createLicense(OrderTerms terms) {
+        Customer customer = new Customer(terms);
         System.debug('Creating license for customer: ' + customer.name);
 
         HttpRequest req = new HttpRequest();
@@ -58,20 +89,7 @@ public class ReplicatedPlatform {
             return null;
         }
 
-        System.debug('Parsing response for the license id');
         return parseLicenseId(res.getBody());
-    }
-
-    public class Application {
-        public String id { get; set; }
-        public String channel { get; set; }
-        public String productCode { get; set; }
-
-        public Application(String id, String channel, String productCode) {
-            this.id = id;
-            this.channel = channel;
-            this.productCode = productCode;
-        }
     }
 
     public class Entitlement {
@@ -97,71 +115,43 @@ public class ReplicatedPlatform {
         public Boolean is_airgap_enabled { get; set; }
         public Boolean is_geoaxis_supported { get; set; }
         public Boolean is_gitops_supported { get; set; }
-        public Boolean is_helmvm_download_enabled { get; set; }
+        public Boolean is_embedded_cluster_download_enabled { get; set; }
         public Boolean is_identity_service_supported { get; set; }
         public Boolean is_kots_install_enabled { get; set; }
-        public Boolean is_snapshot_supported { get; set; }
         public Boolean is_support_bundle_upload_enabled { get; set; }
+        public Boolean is_snapshot_supported { get; set; }
+        public Boolean is_disaster_recovery_supported { get; set; }
         public String type { get; set; }
 
         // Constructor
-        public Customer(Application app, Order order) {
-            Account account = [SELECT Id, Name FROM Account WHERE Id = :order.AccountId LIMIT 1];
+        public Customer(OrderTerms terms) {
             Time midnight = Time.newInstance(0,0,0,0);
-            DateTime expirationDate = (order.EndDate != null) ? Datetime.newInstance(order.EndDate, midnight) : null;
-            Integer userCount = 100;
-
-            Contact shipToContact = [SELECT Email 
-                                       FROM Contact 
-                                       WHERE Id IN (SELECT ShipToContactId FROM Order WHERE Id = :order.Id)
-                                       LIMIT 1];
-
-            List<OrderItem> userPacks = [SELECT Quantity
-                                         FROM OrderItem 
-                                         WHERE OrderId = :order.Id 
-                                           AND Product2Id IN (SELECT Id FROM Product2 WHERE ProductCode IN ('slackernews-users'))];
-            for (OrderItem item : userPacks) {
-                userCount += item.Quantity.IntValue();
-            }
+            DateTime expirationDate = Datetime.newInstance(terms.endDate(), midnight) ;
+            Integer userCount = terms.userCount();
 
             List<Entitlement> entitlements = new List<Entitlement>();
             entitlements.add(new Entitlement('member_count_max', String.ValueOf(userCount)));
 
-            this.name = account.Name;
-            this.custom_id = account.Id;
-            this.app_id = app.id;
-            this.channel_id = app.channel;
-            this.email = shipToContact.Email;
+            this.name = terms.customerName();
+            this.custom_id = terms.accountId();
+            this.app_id = terms.applicationId();
+            this.channel_id = terms.channelId();
+            this.email = terms.customerEmail();
             this.entitlementValues = entitlements; // Initialize as an empty list
             this.expires_at = (expirationDate != null) ? expirationDate.format('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'') : null;
             this.is_geoaxis_supported = false;
             this.is_gitops_supported = false;
             this.is_identity_service_supported = false;
-            this.is_support_bundle_upload_enabled = true;
             this.type = 'prod';
 
-            if (app.productCode == 'slackernews-admin-console' || app.productCode == 'slackernews-admin-console-lts') {
-                this.is_kots_install_enabled = true;
-                this.is_helmvm_download_enabled = false;
-                this.is_airgap_enabled = false;
-                this.is_snapshot_supported = true ;
-            } else if (app.productCode == 'slackernes-embedded-cluster' || app.productCode == 'slackernes-embedded-cluster-lts') {
-                this.is_kots_install_enabled = true;
-                this.is_helmvm_download_enabled = true;
-                this.is_airgap_enabled = false;
-                this.is_snapshot_supported = true ;
-            } else if (app.productCode == 'slackernews-airgap' || app.productCode == 'slackernews-airgap-lts') {
-                this.is_airgap_enabled = true;
-                this.is_kots_install_enabled = true;
-                this.is_helmvm_download_enabled = true;
-                this.is_snapshot_supported = true ;
-            } else {
-                this.is_kots_install_enabled = false;
-                this.is_helmvm_download_enabled = false;
-                this.is_airgap_enabled = false;
-                this.is_snapshot_supported = false ;
-            }
+            this.is_kots_install_enabled = terms.isAdminConsoleEnabled();
+            this.is_embedded_cluster_download_enabled = terms.isEmbeddedClusterEnabled();
+            this.is_airgap_enabled = terms.isAirgapEnabled();
+            this.is_support_bundle_upload_enabled = terms.isSupportBundleUploadEnabled() ;
+            this.is_snapshot_supported = terms.isSnapshotSupported() ;
+            this.is_disaster_recovery_supported = terms.isDisasterRecoverySupported() ;
         }
     }
 
+    public class ReplicatedAPIException extends Exception {}
 }

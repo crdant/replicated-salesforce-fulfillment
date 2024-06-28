@@ -5,7 +5,6 @@
     <description>Customer can directly upload support bundles from the Admin Console when their installation is online</description>
     <inlineHelpText>Include support bundle upload in customer license</inlineHelpText>
     <label>Support Bundle Upload</label>
-    <trackFeedHistory>false</trackFeedHistory>
-    <trackTrending>false</trackTrending>
+    <trackHistory>false</trackHistory>
     <type>Checkbox</type>
 </CustomField>
