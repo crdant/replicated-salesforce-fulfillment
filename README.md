@@ -7,6 +7,21 @@ seamless license creation for Replicated products.
 
 [![Integrating the Replicated Platform into Your Sales Process](https://cdn.loom.com/sessions/thumbnails/a07b98c049e24132933a410edeaa55b3-with-play.gif)](https://www.loom.com/share/a07b98c049e24132933a410edeaa55b3)
 
+## Background
+
+Integrating license management into their sales process is a common
+requirement for software vendors using the Replicated Platform. While
+Replicated focuses on distribution and installation, many vendors need to
+streamline their sales process and automate license generation directly from
+their CRM.
+
+This project arose from discussions with Replicated customers about how to
+bridge the gap between their sales processes and the license management
+capabilities of the Replicated platform. The goal was to create a seamless
+workflow that would allow sales teams to generate licenses automatically as
+part of their normal without requiring manual intervention or switching
+between systems.
+
 ## Architecture
 
 The solution involves components in the vendor's Salesforce org, the
