@@ -11,7 +11,7 @@ seamless license creation for Replicated products.
 
 Integrating license management into their sales process is a common
 requirement for software vendors using the Replicated Platform. While
-Replicated focuses on distribution and installation, many vendors need to
+Replicated focuses on distribution and installation, many vendors will want to
 streamline their sales process and automate license generation directly from
 their CRM.
 
@@ -61,7 +61,7 @@ their associated entitlements:
    - `ReleaseChannel__c`: Defines the release channel (e.g., Stable, Beta).
 
 2. **Replicated Entitlements**:
-   - `IsAdminConsoleEnabled__c`: Enables/disables the admin console feature.
+   - `IsAdminConsoleEnabled__c`: Enables/disables the Admin Console feature.
    - `IsAirgapEnabled__c`: Indicates if airgap installations are supported.
    - `IsEmbeddedClusterEnabled__c`: Enables/disables the embedded cluster feature.
    - `IsAddOn__c`: Identifies the product as an add-on.
