@@ -5,6 +5,23 @@ automating the process of creating licenses when opportunities are closed and
 orders are activated. It streamlines the workflow for sales teams and ensures
 seamless license creation for Replicated products.
 
+[![Integrating the Replicated Platform into Your Sales Process](https://cdn.loom.com/sessions/thumbnails/a07b98c049e24132933a410edeaa55b3-with-play.gif)](https://www.loom.com/share/a07b98c049e24132933a410edeaa55b3)
+
+## Background
+
+Integrating license management into their sales process is a common
+requirement for software vendors using the Replicated Platform. While
+Replicated focuses on distribution and installation, many vendors will want to
+streamline their sales process and automate license generation directly from
+their CRM.
+
+This project arose from discussions with Replicated customers about how to
+bridge the gap between their sales processes and the license management
+capabilities of the Replicated platform. The goal was to create a seamless
+workflow that would allow sales teams to generate licenses automatically as
+part of their normal without requiring manual intervention or switching
+between systems.
+
 ## Architecture
 
 The solution involves components in the vendor's Salesforce org, the
@@ -44,9 +61,12 @@ their associated entitlements:
    - `ReleaseChannel__c`: Defines the release channel (e.g., Stable, Beta).
 
 2. **Replicated Entitlements**:
-   - `IsAdminConsoleEnabled__c`: Enables/disables the admin console feature.
+   - `IsAdminConsoleEnabled__c`: Enables/disables the Admin Console feature.
+     Maps to the "KOTS Install Enabled" license option.
    - `IsAirgapEnabled__c`: Indicates if airgap installations are supported.
+     Maps to the "Airgap Download Enabled" license option.
    - `IsEmbeddedClusterEnabled__c`: Enables/disables the embedded cluster feature.
+     Maps to the "Embedded Cluster Enabled" license option.
    - `IsAddOn__c`: Identifies the product as an add-on.
 
 Ensure these fields are properly set when configuring products to reflect the
