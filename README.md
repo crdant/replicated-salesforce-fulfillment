@@ -62,8 +62,11 @@ their associated entitlements:
 
 2. **Replicated Entitlements**:
    - `IsAdminConsoleEnabled__c`: Enables/disables the Admin Console feature.
+     Maps to the "KOTS Install Enabled" license option.
    - `IsAirgapEnabled__c`: Indicates if airgap installations are supported.
+     Maps to the "Airgap Download Enabled" license option.
    - `IsEmbeddedClusterEnabled__c`: Enables/disables the embedded cluster feature.
+     Maps to the "Embedded Cluster Enabled" license option.
    - `IsAddOn__c`: Identifies the product as an add-on.
 
 Ensure these fields are properly set when configuring products to reflect the
