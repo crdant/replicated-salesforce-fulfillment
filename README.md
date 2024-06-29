@@ -5,6 +5,8 @@ automating the process of creating licenses when opportunities are closed and
 orders are activated. It streamlines the workflow for sales teams and ensures
 seamless license creation for Replicated products.
 
+[![Integrating the Replicated Platform into Your Sales Process](https://cdn.loom.com/sessions/thumbnails/a07b98c049e24132933a410edeaa55b3-with-play.gif)](https://www.loom.com/share/a07b98c049e24132933a410edeaa55b3)
+
 ## Architecture
 
 The solution involves components in the vendor's Salesforce org, the
