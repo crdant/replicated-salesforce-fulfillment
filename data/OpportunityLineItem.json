@@ -1,0 +1,74 @@
+{
+    "records": [
+        {
+            "attributes": {
+                "type": "OpportunityLineItem",
+                "referenceId": "OpportunityLineItemRef1"
+            },
+            "PricebookEntryId": "@PricebookEntryRef4",
+            "Quantity": 10000,
+            "UnitPrice": 15,
+            "OpportunityId": "@OpportunityRef1"
+        },
+        {
+            "attributes": {
+                "type": "OpportunityLineItem",
+                "referenceId": "OpportunityLineItemRef2"
+            },
+            "PricebookEntryId": "@PricebookEntryRef8",
+            "Quantity": 2,
+            "UnitPrice": 85000,
+            "OpportunityId": "@OpportunityRef1"
+        },
+        {
+            "attributes": {
+                "type": "OpportunityLineItem",
+                "referenceId": "OpportunityLineItemRef3"
+            },
+            "PricebookEntryId": "@PricebookEntryRef4",
+            "Quantity": 1000,
+            "UnitPrice": 15,
+            "OpportunityId": "@OpportunityRef2"
+        },
+        {
+            "attributes": {
+                "type": "OpportunityLineItem",
+                "referenceId": "OpportunityLineItemRef4"
+            },
+            "PricebookEntryId": "@PricebookEntryRef8",
+            "Quantity": 2,
+            "UnitPrice": 85000,
+            "OpportunityId": "@OpportunityRef2"
+        },
+        {
+            "attributes": {
+                "type": "OpportunityLineItem",
+                "referenceId": "OpportunityLineItemRef5"
+            },
+            "PricebookEntryId": "@PricebookEntryRef9",
+            "Quantity": 1,
+            "UnitPrice": 85000,
+            "OpportunityId": "@OpportunityRef3"
+        },
+        {
+            "attributes": {
+                "type": "OpportunityLineItem",
+                "referenceId": "OpportunityLineItemRef6"
+            },
+            "PricebookEntryId": "@PricebookEntryRef4",
+            "Quantity": 400,
+            "UnitPrice": 15,
+            "OpportunityId": "@OpportunityRef4"
+        },
+        {
+            "attributes": {
+                "type": "OpportunityLineItem",
+                "referenceId": "OpportunityLineItemRef7"
+            },
+            "PricebookEntryId": "@PricebookEntryRef7",
+            "Quantity": 2,
+            "UnitPrice": 50000,
+            "OpportunityId": "@OpportunityRef4"
+        }
+    ]
+}

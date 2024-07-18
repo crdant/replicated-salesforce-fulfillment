@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+usage() {
+    echo "Usage: $0 -o ORG_ALIAS"
+    exit 1
+}
+
+while getopts ":o:" opt; do
+  case $opt in
+    o)
+      ORG_ALIAS=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      usage
+      ;;
+  esac
+done
+
+# Check if ORG_ALIAS is set
+if [ -z "$ORG_ALIAS" ]; then
+    echo "Error: Org alias is required."
+    usage
+fi
+
+# Prompt for confirmation
+read -p "This operation is destructive and will delete records. Type 'yes' to continue: " CONFIRMATION
+if [ "$CONFIRMATION" != "yes" ]; then
+    echo "Operation cancelled."
+    exit 1
+fi
+
+# Execute the Apex code using the Salesforce CLI
+cat <<CLEANUP_CODE | sf apex run --target-org $ORG_ALIAS
+List<Contract> contractsToDelete = [SELECT Id FROM Contract];
+delete contractsToDelete;
+
+List<OrderItem> orderItemToDelete = [SELECT Id FROM OrderItem];
+delete orderItemToDelete;
+
+List<Order> ordersToDelete = [SELECT Id FROM Order];
+delete ordersToDelete;
+
+List<OpportunityLineItem> opportunityLineItemsToDelete = [SELECT Id FROM OpportunityLineItem];
+delete opportunityLineItemsToDelete;
+
+List<OpportunityContactRole> opportunityContactRolesToDelete = [SELECT Id FROM OpportunityContactRole];
+delete opportunityContactRolesToDelete;
+
+List<Opportunity> opportunitiesToDelete = [SELECT Id FROM Opportunity];
+delete opportunitiesToDelete;
+
+List<PricebookEntry> pricebookEntriesToDelete = [SELECT Id FROM PricebookEntry];
+delete pricebookEntriesToDelete;
+
+List<Product2> productsToDelete = [SELECT Id FROM Product2];
+delete productsToDelete;
+
+List<Contact> contactsToDelete = [SELECT Id FROM Contact];
+delete contactsToDelete;
+
+List<Account> accountsToDelete = [SELECT Id FROM Account];
+delete accountsToDelete;
+CLEANUP_CODE
