@@ -10,3 +10,7 @@ package.xml
 
 # LWC Jest
 **/__tests__/**
+
+# ignore files supporting data import and cleanup
+hack/**
+data/**

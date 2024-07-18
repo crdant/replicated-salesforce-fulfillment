@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+usage() {
+    echo "Usage: $0 -o ORG_ALIAS -d DATA_DIR"
+    exit 1
+}
+
+while getopts ":o:d:" opt; do
+  case $opt in
+    d)
+      DATA_DIR=$OPTARG
+      ;;
+    o)
+      ORG_ALIAS=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      usage
+      ;;
+  esac
+done
+
+# Check if ORG_ALIAS is set
+if [ -z "$ORG_ALIAS" ]; then
+    echo "Error: Org alias is required."
+    usage
+fi
+
+# Check if ORG_ALIAS is set
+if [ -z "$DATA_DIR" ]; then
+    echo "Error: Data directory is required."
+    usage
+fi
+
+# assure that we use the standard pricebook for this particular instance
+jq --arg id $(sf data query --query "SELECT Id FROM Pricebook2 WHERE IsStandard=true" --json --target-org ${ORG_ALIAS} | jq -r '.result.records[0].Id') '.records[].Pricebook2Id = $id' ${DATA_DIR}/PricebookEntry.json | sponge ${DATA_DIR}/PricebookEntry.json
+jq --arg id $(sf data query --query "SELECT Id FROM Pricebook2 WHERE IsStandard=true" --json --target-org ${ORG_ALIAS} | jq -r '.result.records[0].Id') '.records[].Pricebook2Id = $id' ${DATA_DIR}/Opportunity.json | sponge ${DATA_DIR}/Opportunity.json
+
+# import the graph of objects
+sf data import beta tree --plan ${DATA_DIR}/demo-data-plan.json -o ${ORG_ALIAS}

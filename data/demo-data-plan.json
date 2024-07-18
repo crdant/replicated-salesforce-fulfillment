@@ -1,0 +1,58 @@
+[
+    {
+        "sobject": "Account",
+        "saveRefs": true,
+        "resolveRefs": false,
+        "files": [
+            "Account.json"
+        ]
+    },
+    {
+        "sobject": "Contact",
+        "saveRefs": true,
+        "resolveRefs": true,
+        "files": [
+            "Contact.json"
+        ]
+    },
+    {
+      "sobject": "Product2",
+      "saveRefs": true,
+      "resolveRefs": true,
+      "files": [
+          "Product2.json"
+      ]
+    },
+    {
+      "sobject": "PricebookEntry",
+      "saveRefs": false,
+      "resolveRefs": true,
+      "files": [
+          "PricebookEntry.json"
+      ]
+    },
+    {
+        "sobject": "Opportunity",
+        "saveRefs": true,
+        "resolveRefs": true,
+        "files": [
+            "Opportunity.json"
+        ]
+    },
+    {
+        "sobject": "OpportunityLineItem",
+        "saveRefs": false,
+        "resolveRefs": true,
+        "files": [
+            "OpportunityLineItem.json"
+        ]
+    },
+    {
+        "sobject": "OpportunityContactRole",
+        "saveRefs": false,
+        "resolveRefs": true,
+        "files": [
+            "OpportunityContactRole.json"
+        ]
+    }
+]

@@ -1,0 +1,52 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "OpportunityRef1"
+      },
+      "Name": "Geeglo - Slackernews Airgap + 10000 Users",
+      "StageName": "Proposal/Price Quote",
+      "Amount": 320000,
+      "CloseDate": "2024-06-29",
+      "Pricebook2Id": "01saj000004bZqwAAE",
+      "AccountId": "@AccountRef2"
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "OpportunityRef2"
+      },
+      "Name": "Luhu - Airgap + 10000 Users",
+      "StageName": "Proposal/Price Quote",
+      "Amount": 185000,
+      "CloseDate": "2024-07-08",
+      "Pricebook2Id": "01saj000004bZqwAAE",
+      "AccountId": "@AccountRef6"
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "OpportunityRef3"
+      },
+      "Name": "Mocrosift - LTS Airgap",
+      "StageName": "Proposal/Price Quote",
+      "Amount": 85000,
+      "CloseDate": "2024-07-08",
+      "Pricebook2Id": "01saj000004bZqwAAE",
+      "AccountId": "@AccountRef19"
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "OpportunityRef4"
+      },
+      "Name": "RadHet - Slackernews Emebedded Cluster + 400 users",
+      "StageName": "Proposal/Price Quote",
+      "Amount": 106000,
+      "CloseDate": "2024-06-28",
+      "Pricebook2Id": "01saj000004bZqwAAE",
+      "AccountId": "@AccountRef20"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+    "records": [
+        {
+            "attributes": {
+                "type": "OpportunityContactRole",
+                "referenceId": "OpportunityContactRoleRef1"
+            },
+            "ContactId": "@ContactRef4",
+            "Role": "Technical Buyer",
+            "OpportunityId": "@OpportunityRef1"
+        },
+        {
+            "attributes": {
+                "type": "OpportunityContactRole",
+                "referenceId": "OpportunityContactRoleRef2"
+            },
+            "ContactId": "@ContactRef7",
+            "Role": "Technical Buyer",
+            "OpportunityId": "@OpportunityRef2"
+        },
+        {
+            "attributes": {
+                "type": "OpportunityContactRole",
+                "referenceId": "OpportunityContactRoleRef3"
+            },
+            "ContactId": "@ContactRef21",
+            "Role": "Technical Buyer",
+            "OpportunityId": "@OpportunityRef3"
+        },
+        {
+            "attributes": {
+                "type": "OpportunityContactRole",
+                "referenceId": "OpportunityContactRoleRef4"
+            },
+            "ContactId": "@ContactRef23",
+            "Role": "Technical Buyer",
+            "OpportunityId": "@OpportunityRef4"
+        }
+    ]
+}

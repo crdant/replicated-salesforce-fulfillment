@@ -1,0 +1,164 @@
+{
+    "records": [
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref1"
+            },
+            "Name": "Slackernews",
+            "IsActive": true,
+            "IsAddOn__c": false,
+            "IsAdminConsoleEnabled__c": false,
+            "IsAirgapEnabled__c": false,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": false,
+            "ReleaseChannel__c": "2Ukd6ZSK5i9We0m9WznyBI19RtM",
+            "IsSnapshotSupported__c": false,
+            "IsSupportBundleUploadEnabled__c": false
+        },
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref2"
+            },
+            "Name": "Slackernews (LTS Edition)",
+            "IsActive": true,
+            "IsAddOn__c": false,
+            "IsAdminConsoleEnabled__c": true,
+            "IsAirgapEnabled__c": false,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": false,
+            "ReleaseChannel__c": "2fBjnuGTivP2DeQyDPRhuJPP8bS",
+            "IsSnapshotSupported__c": true,
+            "IsSupportBundleUploadEnabled__c": false
+        },
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref3"
+            },
+            "Name": "Slackernews User Pack",
+            "IsActive": false,
+            "IsAddOn__c": false,
+            "IsAdminConsoleEnabled__c": false,
+            "IsAirgapEnabled__c": false,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": false,
+            "ReleaseChannel__c": "2Ukd6ZSK5i9We0m9WznyBI19RtM",
+            "IsSnapshotSupported__c": false,
+            "IsSupportBundleUploadEnabled__c": false
+        },
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref4"
+            },
+            "Name": "Slackernews Users",
+            "IsActive": true,
+            "IsAddOn__c": true,
+            "IsAdminConsoleEnabled__c": false,
+            "IsAirgapEnabled__c": false,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": false,
+            "ReleaseChannel__c": "NOT REQUIRED",
+            "IsSnapshotSupported__c": false,
+            "IsSupportBundleUploadEnabled__c": false
+        },
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref5"
+            },
+            "Name": "Slackernews (Kubernetes Appliance LTS Edition)",
+            "IsActive": true,
+            "IsAddOn__c": false,
+            "IsAdminConsoleEnabled__c": true,
+            "IsAirgapEnabled__c": false,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": true,
+            "ReleaseChannel__c": "2fBjnuGTivP2DeQyDPRhuJPP8bS",
+            "IsSnapshotSupported__c": true,
+            "IsSupportBundleUploadEnabled__c": false
+        },
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref6"
+            },
+            "Name": "Slackernews (GUI Installer)",
+            "IsActive": true,
+            "IsAddOn__c": false,
+            "IsAdminConsoleEnabled__c": true,
+            "IsAirgapEnabled__c": false,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": false,
+            "ReleaseChannel__c": "2Ukd6ZSK5i9We0m9WznyBI19RtM",
+            "IsSnapshotSupported__c": true,
+            "IsSupportBundleUploadEnabled__c": false
+        },
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref7"
+            },
+            "Name": "Slackernews (Kubernetes Appliance)",
+            "IsActive": true,
+            "IsAddOn__c": false,
+            "IsAdminConsoleEnabled__c": true,
+            "IsAirgapEnabled__c": false,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": true,
+            "ReleaseChannel__c": "2Ukd6ZSK5i9We0m9WznyBI19RtM",
+            "IsSnapshotSupported__c": true,
+            "IsSupportBundleUploadEnabled__c": false
+        },
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref8"
+            },
+            "Name": "Slackernews (Airgap)",
+            "IsActive": true,
+            "IsAddOn__c": false,
+            "IsAdminConsoleEnabled__c": true,
+            "IsAirgapEnabled__c": true,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": true,
+            "ReleaseChannel__c": "2Ukd6ZSK5i9We0m9WznyBI19RtM",
+            "IsSnapshotSupported__c": true,
+            "IsSupportBundleUploadEnabled__c": false
+        },
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref9"
+            },
+            "Name": "Slackernews (Airgap LTS Edition)",
+            "IsActive": true,
+            "IsAddOn__c": false,
+            "IsAdminConsoleEnabled__c": true,
+            "IsAirgapEnabled__c": true,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": true,
+            "ReleaseChannel__c": "2fBjnuGTivP2DeQyDPRhuJPP8bS",
+            "IsSnapshotSupported__c": true,
+            "IsSupportBundleUploadEnabled__c": false
+        },
+        {
+            "attributes": {
+                "type": "Product2",
+                "referenceId": "Product2Ref10"
+            },
+            "Name": "Slackernews (GUI Installer LTS Edition)",
+            "IsActive": true,
+            "IsAddOn__c": false,
+            "IsAdminConsoleEnabled__c": true,
+            "IsAirgapEnabled__c": false,
+            "Application__c": "2Ukd6bgLamUYOegqsNOPfjpfQVC",
+            "IsEmbeddedClusterEnabled__c": false,
+            "ReleaseChannel__c": "2fBjnuGTivP2DeQyDPRhuJPP8bS",
+            "IsSnapshotSupported__c": true,
+            "IsSupportBundleUploadEnabled__c": false
+        }
+    ]
+}
