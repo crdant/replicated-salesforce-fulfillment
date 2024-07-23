@@ -48,7 +48,6 @@
         <members>Product2.ValidateIsSnapshotSupported</members>
         <members>Product2.ValidateIsSupportBundleUploadEnabled</members>
         <members>Product2.ValidateNoEntitlementsForAddOns</members>
-        <members>Opportunity.ValidateSingleCoreProduct</members>
         <name>ValidationRule</name>
     </types>
     <version>61.0</version>

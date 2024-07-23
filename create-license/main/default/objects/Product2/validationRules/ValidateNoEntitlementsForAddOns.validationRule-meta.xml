@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ValidateNoEntitlementsForAddOns</fullName>
+    <active>true</active>
+    <errorConditionFormula>IsAddOn__c = TRUE &amp;&amp;
+            (
+                IsAirgapEnabled__c = TRUE ||
+                IsEmbeddedClusterEnabled__c = TRUE ||
+                IsAdminConsoleEnabled__c = TRUE ||
+                IsSnapshotSupported__c = TRUE ||
+                IsSupportBundleUploadEnabled__c = TRUE
+            )</errorConditionFormula>
+    <errorMessage>Add-on products cannot specify entitlements</errorMessage>
+</ValidationRule>
