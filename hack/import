@@ -4,8 +4,14 @@ usage() {
     exit 1
 }
 
-while getopts ":o:d:" opt; do
+while getopts ":o:d:a:c:" opt; do
   case $opt in
+    a)
+      APPLICATION=$OPTARG
+      ;;
+    c)
+      REPLICATED_CHANNEL=$OPTARG
+      ;;
     d)
       DATA_DIR=$OPTARG
       ;;
@@ -38,6 +44,17 @@ fi
 # assure that we use the standard pricebook for this particular instance
 jq --arg id $(sf data query --query "SELECT Id FROM Pricebook2 WHERE IsStandard=true" --json --target-org ${ORG_ALIAS} | jq -r '.result.records[0].Id') '.records[].Pricebook2Id = $id' ${DATA_DIR}/PricebookEntry.json | sponge ${DATA_DIR}/PricebookEntry.json
 jq --arg id $(sf data query --query "SELECT Id FROM Pricebook2 WHERE IsStandard=true" --json --target-org ${ORG_ALIAS} | jq -r '.result.records[0].Id') '.records[].Pricebook2Id = $id' ${DATA_DIR}/Opportunity.json | sponge ${DATA_DIR}/Opportunity.json
+
+metadata=$(replicated app ls --output json | jq --arg app $REPLICATED_APP --arg channel $REPLICATED_CHANNEL '.[] | select( .app.slug == $app ) | { "name": .app.name, "app_id": .app.id, "channel_id": .channels[] | select(.channelSlug == $channel) | .id}')
+app_name=$(echo "${metadata}" | jq -r .name) 
+app_id=$(echo "${metadata}" | jq -r .app_id) 
+channel_id=$(echo "${metadata}" | jq -r .channel_id) 
+
+# customize the product
+jq --arg name $app_name --arg app_id $app_id --arg channel_id $channel_id '{ "records": [ ( (.records[]) | .Name = (.Name | gsub("\\$APPLICATION"; $name)) | .Application__c = $app_id | .ReleaseChannel__c = $channel_id ) ] }' ${DATA_DIR}/Product2.json # | sponge ${DATA_DIR}/Product2.json
+
+# customize the opportunities
+jq --arg name $app_name '{ "records": [ ( (.records[]) | .Name = (.Name | gsub("\\$APPLICATION"; $name))) ] }' ${DATA_DIR}/Opportunity.json | sponge ${DATA_DIR}/Opportunity.json
 
 # import the graph of objects
 sf data import beta tree --plan ${DATA_DIR}/demo-data-plan.json -o ${ORG_ALIAS}

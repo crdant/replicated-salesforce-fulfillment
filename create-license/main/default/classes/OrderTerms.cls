@@ -110,7 +110,7 @@ public class OrderTerms {
         return shipToContact.Email; 
     }
 
-    public Integer userCount() {
+    private Integer userCount() {
         List<OpportunityLineItem> userPacks = [SELECT Id, Quantity
                                                FROM OpportunityLineItem
                                                WHERE OpportunityId = :opportunityId
@@ -120,6 +120,12 @@ public class OrderTerms {
             userCount += userPack.Quantity.intValue();
         }
         return userCount;
+    }
+
+    public List<ReplicatedLicenseEntitlement> entitlements() {
+        List<ReplicatedLicenseEntitlement> entitlements = new List<ReplicatedLicenseEntitlement>();
+        entitlements.add(new ReplicatedLicenseEntitlement('member_count_max', String.ValueOf(userCount())));
+        return entitlements;
     }
 
     public Boolean isAdminConsoleEnabled() {
