@@ -1,8 +1,9 @@
-public class ReplicatedLicense implements Queueable, Database.AllowsCallouts {
+public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts {
     private OrderTerms terms;
     private ReplicatedCustomer customer;
+    private ReplicatedApplication app;
 
-    public ReplicatedLicense(OrderTerms terms) {
+    public ReplicatedFulfillment(OrderTerms terms) {
         this.terms = terms;
         this.customer = new ReplicatedCustomer(terms);
     }
@@ -45,16 +46,20 @@ public class ReplicatedLicense implements Queueable, Database.AllowsCallouts {
     }
 
     private void attachInstallInstructions() {
-        ReplicatedInstallInstructions instructions = new ReplicatedInstallInstructions(this.customer);
+        ReplicatedInstallInstructions instructions = new ReplicatedInstallInstructions(this.app, this.customer);
         
-        attachFile('Helm Install Instructions', 'helm-install-instructions.txt', instructions.helmInstall());
+        attachFile(this.app.name + ' Helm Install Instructions', 'helm-install-instructions.txt', instructions.helmInstall());
+
+        if ( this.terms.isAirgapEnabled() ) {
+            attachFile(this.app.name + ' Airgap Install Instructions', 'airgap-install-instructions.txt', instructions.embeddedClusterInstall());
+        }
 
         if ( this.terms.isEmbeddedClusterEnabled() ) {
-            attachFile('Embedded Cluster Install Instructions', 'embedded-cluster-install-instructions.txt', instructions.embeddedClusterInstall());
+            attachFile(this.app.name + ' Embedded Cluster Install Instructions', 'embedded-cluster-install-instructions.txt', instructions.embeddedClusterInstall());
         }
 
         if ( this.terms.isAdminConsoleEnabled() ) {
-            attachFile('KOTS Install Instructions', 'kots-install-instructions.txt', instructions.kotsInstall());
+            attachFile(this.app.name + ' Admin Console Install Instructions', 'kots-install-instructions.txt', instructions.kotsInstall());
         }
     }
 
@@ -75,7 +80,9 @@ public class ReplicatedLicense implements Queueable, Database.AllowsCallouts {
         }
 
         String instructions = 'helm-install-instructions.txt';
-        if ( this.terms.isEmbeddedClusterEnabled() ) {
+        if ( this.terms.isAirgapEnabled() ) {
+            instructions = 'airgap-install-instructions.txt';
+        } else if ( this.terms.isEmbeddedClusterEnabled() ) {
             instructions = 'embedded-cluster-install-instructions.txt';
         } else if ( this.terms.isAdminConsoleEnabled() ) {
             instructions = 'kots-install-instructions.txt';
@@ -127,6 +134,8 @@ public class ReplicatedLicense implements Queueable, Database.AllowsCallouts {
         if ( !platform.customerExists(this.terms) ) {
             String licenseId = platform.createLicense(this.terms);
             String license = platform.getLicenseFile(this.terms);
+
+            this.app = platform.loadApplication(this.terms.applicationId());
 
             // it may be tempting to pair this with the createLicense call above, but 
             // it will create transaction issues since the call to get the license file

@@ -29,6 +29,30 @@ public class ReplicatedPlatform {
         return licenseId;
     }
 
+    public ReplicatedApplication loadApplication(String appId) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId);
+        req.setMethod('GET');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        System.debug('body; ' + res.getBody());
+        
+        Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        if (resultMap.containsKey('app')) {
+            ReplicatedApplication application = (ReplicatedApplication) JSON.deserialize(JSON.serialize(resultMap.get('app')), ReplicatedApplication.class);
+            return application;
+        }
+        return null;
+    }
+
+    public ReplicatedApplication loadApplication(ReplicatedCustomer customer) {
+        String appId = customer.appId;
+        return loadApplication(appId);
+    } 
+
     public ReplicatedCustomer loadCustomer(OrderTerms terms) {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('https://api.replicated.com/vendor/v3/customers/search');
