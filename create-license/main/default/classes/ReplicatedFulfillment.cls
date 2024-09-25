@@ -1,11 +1,28 @@
 public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts {
     private OrderTerms terms;
+
+    private ReplicatedPlatform platform;
     private ReplicatedCustomer customer;
     private ReplicatedApplication app;
+    private ReplicatedChannel channel;
+
+    // store install instructions to work around transaction boundaries
+    private String helmInstallInstructions;
+    private String airgapInstallInstructions;
+    private String embeddedClusterInstallInstructions;
+    private String kotsInstallInstructions;
 
     public ReplicatedFulfillment(OrderTerms terms) {
         this.terms = terms;
         this.customer = new ReplicatedCustomer(terms);
+        ReplicatedVendorPortalCredential__mdt defaultCredential = [
+            SELECT ApiToken__c 
+            FROM ReplicatedVendorPortalCredential__mdt 
+            WHERE DeveloperName = 'Default' 
+            LIMIT 1
+        ];
+
+        this.platform = new ReplicatedPlatform(defaultCredential);
     }
 
     private void setLicenseId(String licenseId) {
@@ -45,21 +62,27 @@ public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts
         insert docLink;
     }
 
-    private void attachInstallInstructions() {
-        ReplicatedInstallInstructions instructions = new ReplicatedInstallInstructions(this.app, this.customer);
+    private void prepareInstallInstructions() {
+        ReplicatedInstallInstructions instructions = new ReplicatedInstallInstructions(this.platform, this.app, this.customer, this.channel);
+        this.helmInstallInstructions = instructions.helmInstall();
+        this.airgapInstallInstructions = instructions.airgapInstall();
+        this.embeddedClusterInstallInstructions = instructions.embeddedClusterInstall();
+        this.kotsInstallInstructions = instructions.kotsInstall();
+    }
         
-        attachFile(this.app.name + ' Helm Install Instructions', 'helm-install-instructions.txt', instructions.helmInstall());
+    private void attachInstallInstructions() {
+        attachFile(this.app.name + ' Helm Install Instructions', 'helm-install-instructions.txt', this.helmInstallInstructions);
 
         if ( this.terms.isAirgapEnabled() ) {
-            attachFile(this.app.name + ' Airgap Install Instructions', 'airgap-install-instructions.txt', instructions.embeddedClusterInstall());
+            attachFile(this.app.name + ' Airgap Install Instructions', 'airgap-install-instructions.txt', this.airgapInstallInstructions);
         }
 
         if ( this.terms.isEmbeddedClusterEnabled() ) {
-            attachFile(this.app.name + ' Embedded Cluster Install Instructions', 'embedded-cluster-install-instructions.txt', instructions.embeddedClusterInstall());
+            attachFile(this.app.name + ' Embedded Cluster Install Instructions', 'embedded-cluster-install-instructions.txt', this.embeddedClusterInstallInstructions);
         }
 
         if ( this.terms.isAdminConsoleEnabled() ) {
-            attachFile(this.app.name + ' Admin Console Install Instructions', 'kots-install-instructions.txt', instructions.kotsInstall());
+            attachFile(this.app.name + ' Admin Console Install Instructions', 'kots-install-instructions.txt', this.kotsInstallInstructions);
         }
     }
 
@@ -123,23 +146,15 @@ public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts
     }
 
     public void execute(QueueableContext context) {
-        ReplicatedVendorPortalCredential__mdt defaultCredential = [
-            SELECT ApiToken__c 
-            FROM ReplicatedVendorPortalCredential__mdt 
-            WHERE DeveloperName = 'Default' 
-            LIMIT 1
-        ];
+        if ( !this.platform.customerExists(this.terms) ) {
+            String licenseId = this.platform.createLicense(this.terms);
+            this.customer.licenseId = licenseId;
+            String license = this.platform.getLicenseFile(this.terms);
 
-        ReplicatedPlatform platform = new ReplicatedPlatform(defaultCredential);
-        if ( !platform.customerExists(this.terms) ) {
-            String licenseId = platform.createLicense(this.terms);
-            String license = platform.getLicenseFile(this.terms);
+            this.app = this.platform.loadApplication(this.terms.applicationId());
+            this.channel = this.platform.loadChannel(this.terms.applicationId(), this.terms.channelId());
+            this.prepareInstallInstructions();
 
-            this.app = platform.loadApplication(this.terms.applicationId());
-
-            // it may be tempting to pair this with the createLicense call above, but 
-            // it will create transaction issues since the call to get the license file
-            // invokes an HTTP callout which will fail due to an uncommitted transaction
             this.setLicenseId(licenseId);
             this.attachLicense(license);
             this.attachInstallInstructions();

@@ -38,7 +38,7 @@ public class ReplicatedPlatform {
 
         Http http = new Http();
         HttpResponse res = http.send(req);
-        System.debug('body; ' + res.getBody());
+
         
         Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
         if (resultMap.containsKey('app')) {
@@ -48,9 +48,94 @@ public class ReplicatedPlatform {
         return null;
     }
 
+    public String platformHostname(String kind, String appId, String channelId) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/channel/' + channelId);
+        req.setMethod('GET');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        
+        Map<String, Object> channelResultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        Map<String, Object> channel = (Map<String, Object>) channelResultMap.get('channel');
+        Map<String, Object> overrides = (Map<String, Object>) channel.get('customHostnameOverrides');
+        if (overrides.containsKey(kind)) {
+            Map<String, Object> entry = (Map<String, Object>) overrides.get(kind);
+            if ((String)entry.get('hostname') != '') {
+                System.debug('providing hostname' + (String)entry.get('hostname'));
+                return (String)entry.get('hostname');
+            }
+        }
+
+        System.debug('no override on the channel');
+
+        req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/custom-hostnames');
+        req.setMethod('GET');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+
+        http = new Http();
+        res = http.send(req);
+        System.debug('body: ' + res.getBody());
+        
+        Map<String, Object> hostnameResultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        List<Object> appCustomHostnames = (List<Object>) hostnameResultMap.get(kind);
+        for (Object hostnameEntry : (List<Object>) hostnameResultMap.get(kind)) {
+            Map<String, Object> hostname = (Map<String, Object>) hostnameEntry;
+            if ((Boolean) hostname.get('is_default') == true) {
+                System.debug('providing hostname' + (String)hostname.get('hostname'));
+                return (String)hostname.get('hostname');
+            }
+        }
+
+        System.debug('no custom hostname');
+
+        switch on kind {
+            when 'registry' {
+                return 'registry.replicated.com';
+            }
+            when 'proxy' {
+                return 'proxy.replicated.com';
+            }
+            when 'replicatedApp' {
+                return 'replicated.app';
+            }
+            when 'downloadPortal' {
+                return 'get.replicated.com';
+            }
+        }
+        return null ;
+    } 
+
     public ReplicatedApplication loadApplication(ReplicatedCustomer customer) {
-        String appId = customer.appId;
-        return loadApplication(appId);
+        return loadApplication(customer.appId);
+    } 
+
+    public ReplicatedChannel loadChannel(String appId, String channelId) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/channel/' + channelId);
+        req.setMethod('GET');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        
+        Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        if (resultMap.containsKey('channel')) {
+            ReplicatedChannel channel = (ReplicatedChannel) JSON.deserialize(JSON.serialize(resultMap.get('channel')), ReplicatedChannel.class);
+            return channel;
+        }
+        return null;
+    }
+
+    public ReplicatedChannel loadChannel(ReplicatedCustomer customer) {
+        return loadChannel(customer.appId, customer.channelId);
     } 
 
     public ReplicatedCustomer loadCustomer(OrderTerms terms) {
@@ -67,7 +152,7 @@ public class ReplicatedPlatform {
         
         Http http = new Http();
         HttpResponse res = http.send(req);
-        System.debug('body; ' + res.getBody());
+
         
         if (res.getStatusCode() == 200) {
             // Parse the JSON response

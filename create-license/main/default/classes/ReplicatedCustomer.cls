@@ -3,7 +3,9 @@ public class ReplicatedCustomer {
     public String name { get; set; }
     public String customId { get; set; }
     public String appId { get; set; }
+    public String appSlug { get; set; }
     public String channelId { get; set; }
+    public String channelSlug { get; set; }
     public String email { get; set; }
     public List<ReplicatedLicenseEntitlement> entitlementValues { get; set; } 
     public String expiresAt { get; set; }
