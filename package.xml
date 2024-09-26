@@ -20,7 +20,7 @@
     <types>
         <members>CloseWonOpportunity</members>
         <members>ActivateOrder</members>
-        <members>CreateLicense</members>
+        <members>FulfillOrder</members>
         <name>ApexTrigger</name>
     </types>
     <types>

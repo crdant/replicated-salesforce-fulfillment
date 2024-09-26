@@ -1,25 +1,29 @@
-# Replicated License Generation for Salesforce
+# Replicated Fulfillment for Salesforce
 
-This project integrates Replicated license generation with Salesforce,
-automating the process of creating licenses when opportunities are closed and
-orders are activated. It streamlines the workflow for sales teams and ensures
-seamless license creation for Replicated products.
+This project implements a fulfillment process in Salesforce that itegrates
+with the [Replicated Platform](https://replicated.com). It automates the
+process of creating licenses, generating installation instructions, and
+delivering these to customers when orders are activated. It streamlines the
+workflow for sales teams and ensures a seamless experience for customers
+acquiring Replicated-powered software.
 
+<!-- TO DO: Replace with Replicon video -->
 [![Integrating the Replicated Platform into Your Sales Process](https://cdn.loom.com/sessions/thumbnails/a07b98c049e24132933a410edeaa55b3-with-play.gif)](https://www.loom.com/share/a07b98c049e24132933a410edeaa55b3)
 
 ## Background
 
-Integrating license management into their sales process is a common
-requirement for software vendors using the Replicated Platform. While
-Replicated focuses on distribution and installation, many vendors will want to
-streamline their sales process and automate license generation directly from
-their CRM.
+Integrating license management and fulfillment into their sales process is a
+common requirement for software vendors using the Replicated Platform. While
+Replicated focuses on distribution and installation, many vendors want to
+streamline their sales process and automate the entire fulfillment process
+directly from their CRM.
 
 This project arose from discussions with Replicated customers about how to
 bridge the gap between their sales processes and the license management
-capabilities of the Replicated platform. The goal was to create a seamless
-workflow that would allow sales teams to generate licenses automatically as
-part of their normal without requiring manual intervention or switching
+capabilities of the Replicated platform. The goal was to create a workflow
+that would allow sales teams to generate licenses and provide customers with
+everything they need to get started. All of this would be implemented as part
+of their normal process without requiring manual intervention or switching
 between systems.
 
 ## Architecture
@@ -29,27 +33,35 @@ Replicated Vendor Portal, and the customer's environment where the license
 will be used. Here's a high-level overview:
 
 1. Salesforce Org: Contains custom objects, fields, and Apex code to manage
-   the sales process and trigger license generation.
+   the sales process and trigger the fulfillment process.
 2. Replicated Vendor Portal: Provides the API for license creation and
    management.
-3. Customer Environment: Where the generated license will be used with
-   Replicated-powered software.
+3. Customer Environment: Where the generated license and installation
+   instructions will be used with Replicated-powered software.
 
-## Workflow
+## Enhanced Fulfillment Process
+
+The fulfillment process has been significantly expanded to provide a more
+complete solution:
 
 1. Create an Opportunity in Salesforce.
-
 2. Add Products to the Opportunity, specifying quantities and relevant
    details.
+3. Move the opportunity to the "Negoitiation/Review" stage to create Order and
+   Contract objects. These are used by the fulfillment process.
+4. Activate the contract to activate the order.
+5. Upon Order activation, the ReplicatedFulfillment class is triggered, which:
+   - Generates or updates a Replicated license
+   - Retrieves the license file from Replicated
+   - Generates appropriate installation instructions based on the product
+     configuration
+   - Attaches the license file and installation instructions to the Order
+   - Sends an email to the customer with the license file and installation
+     instructions
 
-3. Mark the Opportunity as Closed Won.
-
-4. An Contract and Order are automatically created based on the Closed Won Opportunity.
-
-5. Activated the contract in order to activate the order.
-
-6. Upon Order activation, a Replicated license is automatically generated and
-   associated with the Order.
+This enhanced process ensures that customers receive everything they need to
+start using the software immediately after the order is activated, improving
+the overall customer experience and reducing the time to value.
 
 ## Product Setup
 
@@ -58,134 +70,99 @@ their associated entitlements:
 
 1. **Application and Release Channel**: 
    - `Application__c`: Specifies the Replicated application.
-   - `ReleaseChannel__c`: Defines the release channel (e.g., Stable, Beta).
+   - `ReleaseChannel__c`: Defines the release channel.
 
 2. **Replicated Entitlements**:
    - `IsAdminConsoleEnabled__c`: Enables/disables the Admin Console feature.
-     Maps to the "KOTS Install Enabled" license option.
    - `IsAirgapEnabled__c`: Indicates if airgap installations are supported.
-     Maps to the "Airgap Download Enabled" license option.
-   - `IsEmbeddedClusterEnabled__c`: Enables/disables the embedded cluster feature.
-     Maps to the "Embedded Cluster Enabled" license option.
+   - `IsEmbeddedClusterEnabled__c`: Enables/disables the embedded cluster
+     feature.
    - `IsAddOn__c`: Identifies the product as an add-on.
+   - `IsSnapshotSupported__c`: Indicates if snapshots are supported.
+   - `IsSupportBundleUploadEnabled__c`: Enables/disables support bundle
+     upload.
 
-Ensure these fields are properly set when configuring products to reflect the
-correct Replicated application, release channel, and entitlements.
+These entitlements determine which installation instructions are generated and
+included in the fulfillment email.
 
 ## Salesforce Objects and Their Roles
 
-1. **Replicated_Vendor_Portal_API_Credential__mdt**: Stores API credentials
-   for authenticating with the Replicated Vendor Portal. Used by Apex classes
-   to make secure API calls to generate licenses.
+1. **ReplicatedVendorPortalCredential__mdt**: Stores API credentials for
+   authenticating with the Replicated Vendor Portal.
 
-2. **Product2 (Standard object with custom fields)**: Represents Replicated
-   products and their configurations. Custom fields define application,
-   release channel, and entitlements.
+2. **Product2**: Represents your products and their configurations. There are
+   some custom fields that map to Replicated entitlements.
 
-3. **Opportunity (Standard object)**: Represents a sales opportunity that
-   includes Replicated products. When closed as won, triggers the order
-   creation process.
+3. **Opportunity**: Represents a sales opportunity that includes Replicated
+   products.
 
-4. **Order (Standard object with custom fields)**: Represents the final order
-   that will generate a Replicated license. `LicenseId__c`: Stores the ID of
-   the generated Replicated license.
+4. **Order**: Represents the final order that will trigger the fulfillment
+   process. Includes `LicenseId__c` field to store the generated license ID.
 
 5. **Validation Rules**: Ensure data integrity and enforce business rules.
-   Examples: `ValidateIsAirgapEnabled`, `ValidateSingleCoreProduct`.
 
-6. **Apex Classes**: Contain the business logic for license generation and
-   integration with Replicated. Handle API calls, data processing, and license
-   creation workflows.
+6. **Apex Classes**:
+   - `ReplicatedApplication`, `ReplicatedChannel`, `ReplicatedCustomer`,
+     `ReplicatedLicenseEntitlement`: Data models for Replicated entities.
+   - `ReplicatedPlatform`: Handles API interactions with Replicated.
+   - `ReplicatedFulfillment`: Manages the entire fulfillment process,
+     including license generation, file attachments, and email sending.
+   - `OrderTerms`: Extracts relevant information from the Order.
+   - `ReplicatedInstallInstructions`: Generates installation instructions
+     based on product configuration.
 
 7. **Apex Triggers**:
-   * `CloseWonOpportunity`: Initiates the order creation process when an opportunity is closed as won.
-   * `ActivateOrder`: Triggers the license generation process when an order is activated.
-   * `CreateLicense`: Handles the actual creation of the Replicated license.
-
-This structure ensures a seamless flow from opportunity creation to license
-generation, with proper data validation and business rule enforcement at each
-step.
+   - `CloseWonOpportunity`: Updates Opportunity status when a Contract is
+     activated.
+   - `ActivateOrder`: Activates the Order when a Contract is activated.
+   - `FulfillOrder`: Triggers the fulfillment process when an order is
+     activated.
 
 ## Setup and Configuration
 
 ### Prerequisites
 
 1. Salesforce CLI (`sf`) installed on your local machine.
-   - Download from [Salesforce CLI](https://developer.salesforce.com/tools/sfdxcli)
-   - Follow the installation instructions for your operating system
-
-2. Access to a Salesforce org with system administrator privileges
-
-3. Replicated Vendor Portal account with API access
+2. Access to a Salesforce org with system administrator privileges.
+3. Replicated Vendor Portal account with API access.
 
 ### Steps
 
-1. Clone this repository to your local machine:
+1. Clone this repository to your local machine.
+2. Log in to your Salesforce org using the Salesforce CLI.
+3. Deploy the code to your Salesforce org using the provided Makefile:
+   ```
+   make deploy
+   ```
+4. Set up your products in Salesforce with the required custom fields.
+5. Create a `ReplicatedVendorPortalCredential__mdt` record with your API token.
+6. Configure the an email relay. I use [Mailgun](https://www.mailgun.com/) for this purpose.
+7. Create an organization-wide email address named "Fulfillment" to send the
+   emails.
+8. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
 
-```
-git clone https://github.com/your-username/replicated-salesforce-integration.git
-cd replicated-salesforce-integration
-```
+## Usage
 
-2. Log in to your Salesforce org using the Salesforce CLI:
+The provided Makefile includes several useful commands:
 
-```
-sf org login web -a YourOrgAlias
-```
+- `make deploy`: Deploy the project to your Salesforce org.
+- `make retrieve`: Retrieve the latest metadata from your Salesforce org.
+- `make credentials`: Set the Replicated API token in your org.
+- `make clean`: Clean up data in your org (use with caution).
+- `make import`: Import sample data into your org.
 
-This will open a web browser for you to log in to your Salesforce org. Once
-logged in, you can close the browser window.
+## Troubleshooting
 
-3. Deploy the code to your Salesforce org:
-
-```
-sf force:source:deploy -p force-app
-```
-
-4. Set up your products in Salesforce:
-- Navigate to the Product object in Salesforce Setup
-- Create new products or modify existing ones to include the custom fields for
-  Replicated applications (`Application__c`, `ReleaseChannel__c`, etc.)
-- Ensure all relevant fields are populated for each product
-
-5. Create a `Replicated_Vendor_Portal_API_Credential__mdt` record:
-- In Salesforce Setup, go to Custom Metadata Types
-- Click on "Manage Records" next to `Replicated_Vendor_Portal_API_Credential__mdt`
-- Create a new record with the following details:
-  - Label: Your chosen label (e.g., "Production API Credential")
-  - API Token: Your Replicated Vendor Portal API token
-  - [Add any other required fields for your implementation]
-
-6. Assign appropriate permissions:
-- Create or modify permission sets to grant access to the custom objects and fields
-- Assign these permission sets to the relevant users
-
-7. Test the integration:
-- Create a new Opportunity
-- Add Products to the Opportunity
-- Close the Opportunity as Won
-- Verify that an Order is created and a Replicated license is generated
-
-### Troubleshooting
-
-- If you encounter any deployment errors, check the Salesforce CLI output for
-  specific error messages
-- Verify that all custom fields and objects are correctly created in your
-  Salesforce org
-- Ensure that the API credentials are correctly set up and that your
-  Replicated Vendor Portal account has the necessary permissions
+- Check Salesforce CLI output for specific error messages.
+- Verify that all custom fields and objects are correctly created in your Salesforce org.
+- Ensure that the API credentials are correctly set up and that your Replicated Vendor Portal account has the necessary permissions.
 
 For any additional issues or questions, please open an issue in this GitHub repository.
 
 ## Disclaimer
 
-This code is provided as an example and is not officially supported by
-Replicated. It is intended to serve as a starting point for integrating
-Replicated license generation with Salesforce. Users should thoroughly test
-and adapt this code to their specific needs before using it in a production
-environment.
+This code is provided as an example and is not officially supported by Replicated. It is intended to serve as a starting point for integrating Replicated license generation with Salesforce. Users should thoroughly test and adapt this code to their specific needs before using it in a production environment.
 
 ## License
 
-This project is licensed under the Apache License, Version 2.0. See the
-[LICENSE](./LICENSE) file for details.
+This project is licensed under the Apache License, Version 2.0. See the [LICENSE](./LICENSE) file for details.

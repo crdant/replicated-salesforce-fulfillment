@@ -6,8 +6,8 @@ public class ReplicatedPlatform {
         this.apiToken = credential.ApiToken__c;
     }
 
-    private String parseLicenseId(String detailedCustomer) {
-        JSONParser parser = JSON.createParser(detailedCustomer);
+    private String parseLicenseId(String detailedReplicatedCustomer) {
+        JSONParser parser = JSON.createParser(detailedReplicatedCustomer);
         String licenseId = '';
 
         while (parser.nextToken() != null) {
@@ -29,7 +29,116 @@ public class ReplicatedPlatform {
         return licenseId;
     }
 
-    public Boolean customerExists(OrderTerms terms) {
+    public ReplicatedApplication loadApplication(String appId) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId);
+        req.setMethod('GET');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        
+        Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        if (resultMap.containsKey('app')) {
+            ReplicatedApplication application = (ReplicatedApplication) JSON.deserialize(JSON.serialize(resultMap.get('app')), ReplicatedApplication.class);
+            return application;
+        }
+        return null;
+    }
+
+    public String platformHostname(String kind, String appId, String channelId) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/channel/' + channelId);
+        req.setMethod('GET');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        
+        Map<String, Object> channelResultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        Map<String, Object> channel = (Map<String, Object>) channelResultMap.get('channel');
+        Map<String, Object> overrides = (Map<String, Object>) channel.get('customHostnameOverrides');
+        if (overrides.containsKey(kind)) {
+            Map<String, Object> entry = (Map<String, Object>) overrides.get(kind);
+            if ((String)entry.get('hostname') != '') {
+                System.debug('providing hostname' + (String)entry.get('hostname'));
+                return (String)entry.get('hostname');
+            }
+        }
+
+        System.debug('no override on the channel');
+
+        req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/custom-hostnames');
+        req.setMethod('GET');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+
+        http = new Http();
+        res = http.send(req);
+        System.debug('body: ' + res.getBody());
+        
+        Map<String, Object> hostnameResultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        List<Object> appCustomHostnames = (List<Object>) hostnameResultMap.get(kind);
+        for (Object hostnameEntry : (List<Object>) hostnameResultMap.get(kind)) {
+            Map<String, Object> hostname = (Map<String, Object>) hostnameEntry;
+            if ((Boolean) hostname.get('is_default') == true) {
+                System.debug('providing hostname' + (String)hostname.get('hostname'));
+                return (String)hostname.get('hostname');
+            }
+        }
+
+        System.debug('no custom hostname');
+
+        switch on kind {
+            when 'registry' {
+                return 'registry.replicated.com';
+            }
+            when 'proxy' {
+                return 'proxy.replicated.com';
+            }
+            when 'replicatedApp' {
+                return 'replicated.app';
+            }
+            when 'downloadPortal' {
+                return 'get.replicated.com';
+            }
+        }
+        return null ;
+    } 
+
+    public ReplicatedApplication loadApplication(ReplicatedCustomer customer) {
+        return loadApplication(customer.appId);
+    } 
+
+    public ReplicatedChannel loadChannel(String appId, String channelId) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/channel/' + channelId);
+        req.setMethod('GET');
+        req.setHeader('accept', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        
+        Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        if (resultMap.containsKey('channel')) {
+            ReplicatedChannel channel = (ReplicatedChannel) JSON.deserialize(JSON.serialize(resultMap.get('channel')), ReplicatedChannel.class);
+            return channel;
+        }
+        return null;
+    }
+
+    public ReplicatedChannel loadChannel(ReplicatedCustomer customer) {
+        return loadChannel(customer.appId, customer.channelId);
+    } 
+
+    public ReplicatedCustomer loadCustomer(OrderTerms terms) {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('https://api.replicated.com/vendor/v3/customers/search');
         req.setMethod('POST');
@@ -43,33 +152,50 @@ public class ReplicatedPlatform {
         
         Http http = new Http();
         HttpResponse res = http.send(req);
+
         
         if (res.getStatusCode() == 200) {
-            String responseBody = res.getBody();
-            System.debug('Response body: ' + responseBody);
-            
             // Parse the JSON response
-            Map<String, Object> responseMap = (Map<String, Object>) JSON.deserializeUntyped(responseBody);
-            
-            // Check the total_hits field
-            if (responseMap.containsKey('total_hits')) {
-                Integer totalHits = (Integer) responseMap.get('total_hits');
+            Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+            if (resultMap.containsKey('total_hits')) {
+                Integer totalHits = (Integer) resultMap.get('total_hits');
                 if (totalHits == 0) {
-                    return false;
+                    return null;
                 } else {
-                    return true ;
+                    List<Object> customers = (List<Object>) resultMap.get('customers');
+                    String customerJson = JSON.serialize(customers[0]);
+                    return ReplicatedCustomer.create(customerJson);
                 }
-            } else {
-                throw new ReplicatedAPIException('Error parsing response from Replicated API');
             }
-        } else {
-            System.debug('Error: ' + res.getStatus() + ' - ' + res.getStatusCode() + ' - ' + res.getBody());
-            throw new ReplicatedAPIException('Error looking for existing Replicated customer ' + res.getStatus() + ' - ' + res.getStatusCode() + ' - ' + res.getBody());
+            throw new ReplicatedAPIException('Error parsing response from Replicated API');
+        } 
+        return null ;
+    }
+
+    public String getLicenseFile(OrderTerms terms) {
+        ReplicatedCustomer customer = this.loadCustomer(terms);
+        if (customer == null) {
+            return null;
         }
+
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + terms.applicationId() + '/customer/' + customer.id + '/license-download');
+        req.setMethod('GET');
+        req.setHeader('Authorization', this.apiToken);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        System.debug('license: ' + res.getBody());
+        return res.getBody();
+    }
+
+    public Boolean customerExists(OrderTerms terms) {
+        ReplicatedCustomer customer = this.loadCustomer(terms);
+        return ( customer != null ) ;
     }
 
     public String createLicense(OrderTerms terms) {
-        Customer customer = new Customer(terms);
+        ReplicatedCustomer customer = new ReplicatedCustomer(terms);
         System.debug('Creating license for customer: ' + customer.name);
 
         HttpRequest req = new HttpRequest();
@@ -77,7 +203,7 @@ public class ReplicatedPlatform {
         req.setMethod('POST');
         req.setHeader('Content-Type', 'application/json');
         req.setHeader('Authorization', this.apiToken);
-        req.setBody(JSON.serialize(customer));
+        req.setBody(customer.createRequest());
         
         Http http = new Http();
         HttpResponse res = http.send(req);
@@ -87,70 +213,38 @@ public class ReplicatedPlatform {
             System.debug('Error: ' + res.getStatusCode() + ' ' + res.getStatus());
             System.debug('Message: ' + res.getBody());
             return null;
+        } else {
+            Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+            String customerJson = JSON.serialize(resultMap.get('customer'));
+            ReplicatedCustomer created = ReplicatedCustomer.create(customerJson);
+            return created.licenseId ;
         }
 
-        return parseLicenseId(res.getBody());
     }
 
-    public class Entitlement {
-        public String name { get; set; }
-        public String value { get; set; }
-        public Boolean isDefault { get; set; }
+    public void updateCustomer(ReplicatedCustomer customer) {
+        System.debug('Updating license for customer: ' + customer.name);
 
-        public Entitlement(String name, String value) {
-            this.name = name;
-            this.value = value;
-            this.isDefault = false;
-    }
-    }
-
-    public class Customer {
-        public String name { get; set; }
-        public String custom_id { get; set; }
-        public String app_id { get; set; }
-        public String channel_id { get; set; }
-        public String email { get; set; }
-        public List<Object> entitlementValues { get; set; } // Adjust type if specific type is known
-        public String expires_at { get; set; }
-        public Boolean is_airgap_enabled { get; set; }
-        public Boolean is_geoaxis_supported { get; set; }
-        public Boolean is_gitops_supported { get; set; }
-        public Boolean is_embedded_cluster_download_enabled { get; set; }
-        public Boolean is_identity_service_supported { get; set; }
-        public Boolean is_kots_install_enabled { get; set; }
-        public Boolean is_support_bundle_upload_enabled { get; set; }
-        public Boolean is_snapshot_supported { get; set; }
-        public Boolean is_disaster_recovery_supported { get; set; }
-        public String type { get; set; }
-
-        // Constructor
-        public Customer(OrderTerms terms) {
-            Time midnight = Time.newInstance(0,0,0,0);
-            DateTime expirationDate = Datetime.newInstance(terms.endDate(), midnight) ;
-            Integer userCount = terms.userCount();
-
-            List<Entitlement> entitlements = new List<Entitlement>();
-            entitlements.add(new Entitlement('member_count_max', String.ValueOf(userCount)));
-
-            this.name = terms.customerName();
-            this.custom_id = terms.accountId();
-            this.app_id = terms.applicationId();
-            this.channel_id = terms.channelId();
-            this.email = terms.customerEmail();
-            this.entitlementValues = entitlements; // Initialize as an empty list
-            this.expires_at = (expirationDate != null) ? expirationDate.format('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'') : null;
-            this.is_geoaxis_supported = false;
-            this.is_gitops_supported = false;
-            this.is_identity_service_supported = false;
-            this.type = 'prod';
-
-            this.is_kots_install_enabled = terms.isAdminConsoleEnabled();
-            this.is_embedded_cluster_download_enabled = terms.isEmbeddedClusterEnabled();
-            this.is_airgap_enabled = terms.isAirgapEnabled();
-            this.is_support_bundle_upload_enabled = terms.isSupportBundleUploadEnabled() ;
-            this.is_snapshot_supported = terms.isSnapshotSupported() ;
-            this.is_disaster_recovery_supported = terms.isDisasterRecoverySupported() ;
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/customer');
+        req.setMethod('PUT');
+        req.setHeader('Content-Type', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+        req.setBody(customer.createRequest());
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if (res.getStatusCode() != 201) {
+            // Handle error
+            System.debug('Error: ' + res.getStatusCode() + ' ' + res.getStatus());
+            System.debug('Message: ' + res.getBody());
+        } else {
+            Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+            String customerJson = JSON.serialize(resultMap.get('customer'));
+            ReplicatedCustomer created = ReplicatedCustomer.create(customerJson);
         }
+
     }
 
     public class ReplicatedAPIException extends Exception {}
