@@ -62,6 +62,24 @@ public class ReplicatedCustomer {
 
     // Constructor
     public ReplicatedCustomer(OrderTerms terms) {
+        setTerms(terms);
+    }
+  
+    // Factory method that initializes the object from the provided JSON
+    public static ReplicatedCustomer create (String jsonString) {
+        ReplicatedCustomer customer = (ReplicatedCustomer) JSON.deserialize(jsonString, ReplicatedCustomer.class);
+
+        Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonString);
+        customer.licenseId = (String) jsonMap.get('installationId');
+
+        return customer;
+    }  
+
+    public void updateTerms(OrderTerms terms) {
+        setTerms(terms);
+    }
+
+    private void setTerms(OrderTerms terms) {
         Time midnight = Time.newInstance(0,0,0,0);
         DateTime expirationDate = Datetime.newInstance(terms.endDate(), midnight) ;
 
@@ -86,16 +104,6 @@ public class ReplicatedCustomer {
         this.isSnapshotSupported = terms.isSnapshotSupported() ;
         this.isDisasterRecoverySupported = terms.isDisasterRecoverySupported() ;
     }
-  
-    // Factory method that initializes the object from the provided JSON
-    public static ReplicatedCustomer create (String jsonString) {
-        ReplicatedCustomer customer = (ReplicatedCustomer) JSON.deserialize(jsonString, ReplicatedCustomer.class);
-
-        Map<String, Object> jsonMap = (Map<String, Object>) JSON.deserializeUntyped(jsonString);
-        customer.licenseId = (String) jsonMap.get('installationId');
-
-        return customer;
-    }  
 }
 
 

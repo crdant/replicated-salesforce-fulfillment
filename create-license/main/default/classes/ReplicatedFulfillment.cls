@@ -139,31 +139,32 @@ public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts
         // Send the email
         try {
             Messaging.sendEmail(new Messaging.SingleEmailMessage[] { email });
-            System.debug('Email sent successfully with attachment');
         } catch (Exception e) {
             System.debug('Error sending email: ' + e.getMessage());
         }
     }
 
     public void execute(QueueableContext context) {
+        String licenseId = null ; 
         if ( !this.platform.customerExists(this.terms) ) {
-            String licenseId = this.platform.createLicense(this.terms);
+            licenseId = this.platform.createLicense(this.terms);
             this.customer.licenseId = licenseId;
-            String license = this.platform.getLicenseFile(this.terms);
-
-            this.app = this.platform.loadApplication(this.terms.applicationId());
-            this.channel = this.platform.loadChannel(this.terms.applicationId(), this.terms.channelId());
-            this.prepareInstallInstructions();
-
-            this.setLicenseId(licenseId);
-            this.attachLicense(license);
-            this.attachInstallInstructions();
-            this.sendInstallInstructions();
-
-            return;
         } else {
-          System.debug('TO DO: Handle existing customer');
+            ReplicatedCustomer customer = this.platform.loadCustomer(this.terms);
+            licenseId = customer.licenseId;
+            customer.updateTerms(this.terms);
+            this.platform.updateCustomer(customer); 
         }
+
+        String license = this.platform.getLicenseFile(this.terms);
         
+        this.app = this.platform.loadApplication(this.terms.applicationId());
+        this.channel = this.platform.loadChannel(this.terms.applicationId(), this.terms.channelId());
+        this.prepareInstallInstructions();
+
+        this.setLicenseId(licenseId);
+        this.attachLicense(license);
+        this.attachInstallInstructions();
+        this.sendInstallInstructions();
     }
 }

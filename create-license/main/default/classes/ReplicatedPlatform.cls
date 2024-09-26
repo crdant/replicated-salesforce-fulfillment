@@ -222,5 +222,30 @@ public class ReplicatedPlatform {
 
     }
 
+    public void updateCustomer(ReplicatedCustomer customer) {
+        System.debug('Updating license for customer: ' + customer.name);
+
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/customer');
+        req.setMethod('PUT');
+        req.setHeader('Content-Type', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+        req.setBody(customer.createRequest());
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if (res.getStatusCode() != 201) {
+            // Handle error
+            System.debug('Error: ' + res.getStatusCode() + ' ' + res.getStatus());
+            System.debug('Message: ' + res.getBody());
+        } else {
+            Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+            String customerJson = JSON.serialize(resultMap.get('customer'));
+            ReplicatedCustomer created = ReplicatedCustomer.create(customerJson);
+        }
+
+    }
+
     public class ReplicatedAPIException extends Exception {}
 }
