@@ -136,8 +136,10 @@ included in the fulfillment email.
    ```
 4. Set up your products in Salesforce with the required custom fields.
 5. Create a `ReplicatedVendorPortalCredential__mdt` record with your API token.
-6. Assign appropriate permissions to users.
-7. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
+6. Configure the an email relay. I use [Mailgun](https://www.mailgun.com/) for this purpose.
+7. Create an organization-wide email address named "Fulfillment" to send the
+   emails.
+8. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
 
 ## Usage
 
