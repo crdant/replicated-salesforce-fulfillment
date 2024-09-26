@@ -1,11 +1,11 @@
-# Replicated License Generation and Fulfillment for Salesforce
+# Replicated Fulfillment for Salesforce
 
-This project integrates Replicated license generation and fulfillment with
-Salesforce, automating the process of creating licenses, generating
-installation instructions, and delivering these to customers when orders are
-activated. It provides a comprehensive solution that streamlines the workflow
-for sales teams and ensures a seamless experience for customers acquiring
-Replicated-powered software.
+This project implements a fulfillment process in Salesforce that itegrates
+with the [Replicated Platform](https://replicated.com). It automates the
+process of creating licenses, generating installation instructions, and
+delivering these to customers when orders are activated. It streamlines the
+workflow for sales teams and ensures a seamless experience for customers
+acquiring Replicated-powered software.
 
 <!-- TO DO: Replace with Replicon video -->
 [![Integrating the Replicated Platform into Your Sales Process](https://cdn.loom.com/sessions/thumbnails/a07b98c049e24132933a410edeaa55b3-with-play.gif)](https://www.loom.com/share/a07b98c049e24132933a410edeaa55b3)
@@ -20,9 +20,9 @@ directly from their CRM.
 
 This project arose from discussions with Replicated customers about how to
 bridge the gap between their sales processes and the license management
-capabilities of the Replicated platform. The goal was to create a seamless
-workflow that would allow sales teams to generate licenses and provide
-customers with everything they need to get started, all automatically as part
+capabilities of the Replicated platform. The goal was to create a workflow
+that would allow sales teams to generate licenses and provide customers with
+everything they need to get started. All of this would be implemented as part
 of their normal process without requiring manual intervention or switching
 between systems.
 
@@ -47,11 +47,10 @@ complete solution:
 1. Create an Opportunity in Salesforce.
 2. Add Products to the Opportunity, specifying quantities and relevant
    details.
-3. Mark the Opportunity as Closed Won.
-4. A Contract and Order are automatically created based on the Closed Won
-   Opportunity.
-5. Activate the contract to activate the order.
-6. Upon Order activation, the ReplicatedFulfillment class is triggered, which:
+3. Move the opportunity to the "Negoitiation/Review" stage to create Order and
+   Contract objects. These are used by the fulfillment process.
+4. Activate the contract to activate the order.
+5. Upon Order activation, the ReplicatedFulfillment class is triggered, which:
    - Generates or updates a Replicated license
    - Retrieves the license file from Replicated
    - Generates appropriate installation instructions based on the product
@@ -91,9 +90,11 @@ included in the fulfillment email.
 1. **ReplicatedVendorPortalCredential__mdt**: Stores API credentials for
    authenticating with the Replicated Vendor Portal.
 
-2. **Product2**: Represents Replicated products and their configurations.
+2. **Product2**: Represents your products and their configurations. There are
+   some custom fields that map to Replicated entitlements.
 
-3. **Opportunity**: Represents a sales opportunity that includes Replicated products.
+3. **Opportunity**: Represents a sales opportunity that includes Replicated
+   products.
 
 4. **Order**: Represents the final order that will trigger the fulfillment
    process. Includes `LicenseId__c` field to store the generated license ID.
