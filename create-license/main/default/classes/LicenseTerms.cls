@@ -1,10 +1,10 @@
-public class OrderTerms {
+public class LicenseTerms {
     private Id opportunityId ;
 
     private Date closeDate;
     private Integer years;
 
-    public OrderTerms(Id opportunityId) {
+    public LicenseTerms(Id opportunityId) {
         Opportunity opp = [SELECT Id, CloseDate
                            FROM Opportunity 
                            WHERE Id = :opportunityId
@@ -12,7 +12,7 @@ public class OrderTerms {
         this.initialize(opp);
     }
 
-    public OrderTerms(Order order) {
+    public LicenseTerms(Order order) {
         Opportunity opp = [SELECT Id, CloseDate
                            FROM Opportunity 
                            WHERE Id = :order.OpportunityId
@@ -20,7 +20,7 @@ public class OrderTerms {
         this.initialize(opp);
     }
 
-    public OrderTerms(Opportunity opp) {
+    public LicenseTerms(Opportunity opp) {
         this.initialize(opp);
     }
 

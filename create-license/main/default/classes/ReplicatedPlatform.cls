@@ -138,7 +138,7 @@ public class ReplicatedPlatform {
         return loadChannel(customer.appId, customer.channelId);
     } 
 
-    public ReplicatedCustomer loadCustomer(OrderTerms terms) {
+    public ReplicatedCustomer loadCustomer(LicenseTerms terms) {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('https://api.replicated.com/vendor/v3/customers/search');
         req.setMethod('POST');
@@ -172,7 +172,7 @@ public class ReplicatedPlatform {
         return null ;
     }
 
-    public String getLicenseFile(OrderTerms terms) {
+    public String getLicenseFile(LicenseTerms terms) {
         ReplicatedCustomer customer = this.loadCustomer(terms);
         if (customer == null) {
             return null;
@@ -189,12 +189,12 @@ public class ReplicatedPlatform {
         return res.getBody();
     }
 
-    public Boolean customerExists(OrderTerms terms) {
+    public Boolean customerExists(LicenseTerms terms) {
         ReplicatedCustomer customer = this.loadCustomer(terms);
         return ( customer != null ) ;
     }
 
-    public String createLicense(OrderTerms terms) {
+    public String createLicense(LicenseTerms terms) {
         ReplicatedCustomer customer = new ReplicatedCustomer(terms);
         System.debug('Creating license for customer: ' + customer.name);
 

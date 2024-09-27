@@ -61,7 +61,7 @@ public class ReplicatedCustomer {
     }
 
     // Constructor
-    public ReplicatedCustomer(OrderTerms terms) {
+    public ReplicatedCustomer(LicenseTerms terms) {
         setTerms(terms);
     }
   
@@ -75,11 +75,11 @@ public class ReplicatedCustomer {
         return customer;
     }  
 
-    public void updateTerms(OrderTerms terms) {
+    public void updateTerms(LicenseTerms terms) {
         setTerms(terms);
     }
 
-    private void setTerms(OrderTerms terms) {
+    private void setTerms(LicenseTerms terms) {
         Time midnight = Time.newInstance(0,0,0,0);
         DateTime expirationDate = Datetime.newInstance(terms.endDate(), midnight) ;
 

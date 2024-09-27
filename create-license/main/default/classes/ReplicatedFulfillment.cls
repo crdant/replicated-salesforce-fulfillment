@@ -1,5 +1,5 @@
 public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts {
-    private OrderTerms terms;
+    private LicenseTerms terms;
 
     private ReplicatedPlatform platform;
     private ReplicatedCustomer customer;
@@ -12,7 +12,7 @@ public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts
     private String embeddedClusterInstallInstructions;
     private String kotsInstallInstructions;
 
-    public ReplicatedFulfillment(OrderTerms terms) {
+    public ReplicatedFulfillment(LicenseTerms terms) {
         this.terms = terms;
         this.customer = new ReplicatedCustomer(terms);
         ReplicatedVendorPortalCredential__mdt defaultCredential = [
