@@ -3,7 +3,7 @@
     <fullName>ValidateTrialDates</fullName>
     <active>true</active>
     <description>Ensures the trials and after they begin</description>
-    <errorConditionFormula>TrialEnd_Date__c &lt; TrialStartDate__c</errorConditionFormula>
-    <errorMessage>The Trial End Date must be after the Trial Start Date.</errorMessage>
+    <errorConditionFormula>TrialEndDate__c &lt; TrialStartDate__c</errorConditionFormula>
     <errorDisplayField>TrialEndDate__c</errorDisplayField>
+    <errorMessage>The Trial End Date must be after the Trial Start Date.</errorMessage>
 </ValidationRule>

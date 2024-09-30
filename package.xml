@@ -24,12 +24,17 @@
         <name>ApexTrigger</name>
     </types>
     <types>
+        <members>Opportunity</members>
         <members>Replicated_Vendor_Portal_API_Credential__mdt</members>
         <name>CustomObject</name>  
     </types>
     <types>
-        <members>Order-Order Layout</members>
         <members>Product2-Product Layout</members>
+        <members>Order-Order Layout</members>
+        <members>Opportunity-Opportunity %28Marketing%29 Layout</members>
+        <members>Opportunity-Opportunity %28Sales%29 Layout</members>
+        <members>Opportunity-Opportunity %28Support%29 Layout</members>
+        <members>Opportunity-Opportunity Layout</members>
         <name>Layout</name>
     </types>
     <types>
@@ -39,6 +44,8 @@
         <members>Product2.IsAirgapEnabled__c</members>
         <members>Product2.IsEmbeddedClusterEnabled__c</members>
         <members>Product2.IsAddOn__c</members>
+        <members>Opportunity.TrialStartDate__c</members>
+        <members>Opportunity.TrialEndDate__c</members>
         <members>Order.LicenseId__c</members>
         <name>CustomField</name>
     </types>
@@ -48,6 +55,7 @@
         <members>Product2.ValidateIsSnapshotSupported</members>
         <members>Product2.ValidateIsSupportBundleUploadEnabled</members>
         <members>Product2.ValidateNoEntitlementsForAddOns</members>
+        <members>Opportunity.ValidateTrialDates</members>
         <name>ValidationRule</name>
     </types>
     <version>61.0</version>
