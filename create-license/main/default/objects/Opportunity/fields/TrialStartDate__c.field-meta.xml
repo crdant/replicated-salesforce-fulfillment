@@ -3,7 +3,7 @@
     <fullName>TrialStartDate__c</fullName>
     <description>Trial Start Date</description>
     <externalId>false</externalId>
-    <label>TrialStartDate</label>
+    <label>Trial Start Date</label>
     <required>false</required>
     <trackHistory>true</trackHistory>
     <type>Date</type>
