@@ -15,6 +15,7 @@
             <value><fullName>Degraded</fullName><default>false</default><label>Degraded</label></value>
             <value><fullName>Unavailable</fullName><default>false</default><label>Unavailable</label></value>
             <value><fullName>Missing</fullName><default>false</default><label>Missing</label></value>
+            <value><fullName>Unknown</fullName><default>true</default><label>Unknown</label></value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>
