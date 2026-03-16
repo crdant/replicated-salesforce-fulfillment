@@ -141,6 +141,37 @@ included in the fulfillment email.
    emails.
 8. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
 
+## Salesforce Site Setup
+
+A Salesforce Site is required to expose the webhook endpoint publicly so
+Replicated can POST event notifications to Salesforce. HMAC-SHA256 signature
+verification in the Apex code handles security.
+
+### Steps
+
+1. Navigate to **Setup → Sites** and create a new Site.
+2. Set the Site URL suffix (e.g., `replicated-webhooks`).
+3. Grant the Site Guest User profile access to:
+   - `ReplicatedWebhookReceiver` Apex class
+   - Publish access on `Replicated_Webhook__e` Platform Event
+4. Activate the Site.
+
+The resulting webhook URL will be:
+
+```
+https://<org-domain>.my.salesforce-sites.com/services/apexrest/replicated/webhook
+```
+
+Configure this URL in the Replicated Vendor Portal under **Notifications →
+Create Notification**:
+
+1. Select the relevant event types (e.g., customer.created, instance.created,
+   license expiring).
+2. Set the webhook URL to the Salesforce Site URL above.
+3. Configure the HMAC signing secret (must match the value stored in the
+   `Replicated_Webhook_Secret__mdt` custom metadata record in Salesforce).
+4. Optionally add custom headers for additional authentication.
+
 ## Usage
 
 The provided Makefile includes several useful commands:
