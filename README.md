@@ -1,11 +1,11 @@
 # Replicated Fulfillment for Salesforce
 
-This project implements a fulfillment process in Salesforce that itegrates
+This project implements a fulfillment process in Salesforce that integrates
 with the [Replicated Platform](https://replicated.com). It automates the
-process of creating licenses, generating installation instructions, and
-delivering these to customers when orders are activated. It streamlines the
-workflow for sales teams and ensures a seamless experience for customers
-acquiring Replicated-powered software.
+process of creating licenses and inviting customers to the Replicated
+Enterprise Portal when orders are activated. It streamlines the workflow for
+sales teams and ensures a seamless experience for customers acquiring
+Replicated-powered software.
 
 <!-- TO DO: Replace with Replicon video -->
 [![Integrating the Replicated Platform into Your Sales Process](https://cdn.loom.com/sessions/thumbnails/a07b98c049e24132933a410edeaa55b3-with-play.gif)](https://www.loom.com/share/a07b98c049e24132933a410edeaa55b3)
@@ -21,47 +21,39 @@ directly from their CRM.
 This project arose from discussions with Replicated customers about how to
 bridge the gap between their sales processes and the license management
 capabilities of the Replicated platform. The goal was to create a workflow
-that would allow sales teams to generate licenses and provide customers with
-everything they need to get started. All of this would be implemented as part
-of their normal process without requiring manual intervention or switching
+that would allow sales teams to generate licenses and onboard customers
+through the Enterprise Portal. All of this would be implemented as part of
+their normal process without requiring manual intervention or switching
 between systems.
 
 ## Architecture
 
-The solution involves components in the vendor's Salesforce org, the
-Replicated Vendor Portal, and the customer's environment where the license
-will be used. Here's a high-level overview:
+The solution involves components in the vendor's Salesforce org and the
+Replicated Vendor Portal. Here's a high-level overview:
 
 1. Salesforce Org: Contains custom objects, fields, and Apex code to manage
    the sales process and trigger the fulfillment process.
-2. Replicated Vendor Portal: Provides the API for license creation and
-   management.
-3. Customer Environment: Where the generated license and installation
-   instructions will be used with Replicated-powered software.
+2. Replicated Vendor Portal: Provides the API for license creation,
+   management, and Enterprise Portal invitations.
 
-## Enhanced Fulfillment Process
+## Fulfillment Process
 
-The fulfillment process has been significantly expanded to provide a more
-complete solution:
+The fulfillment process automates license management and customer onboarding:
 
 1. Create an Opportunity in Salesforce.
 2. Add Products to the Opportunity, specifying quantities and relevant
    details.
-3. Move the opportunity to the "Negoitiation/Review" stage to create Order and
+3. Move the opportunity to the "Negotiation/Review" stage to create Order and
    Contract objects. These are used by the fulfillment process.
 4. Activate the contract to activate the order.
 5. Upon Order activation, the ReplicatedFulfillment class is triggered, which:
-   - Generates or updates a Replicated license
-   - Retrieves the license file from Replicated
-   - Generates appropriate installation instructions based on the product
-     configuration
-   - Attaches the license file and installation instructions to the Order
-   - Sends an email to the customer with the license file and installation
-     instructions
+   - Creates or updates a Replicated license on the Replicated platform
+   - Records the license ID on the Salesforce Order
+   - Sends an Enterprise Portal invitation to the customer
 
-This enhanced process ensures that customers receive everything they need to
-start using the software immediately after the order is activated, improving
-the overall customer experience and reducing the time to value.
+This process ensures that customers are onboarded to the Enterprise Portal
+immediately after the order is activated, improving the overall customer
+experience and reducing the time to value.
 
 ## Product Setup
 
@@ -82,8 +74,8 @@ their associated entitlements:
    - `IsSupportBundleUploadEnabled__c`: Enables/disables support bundle
      upload.
 
-These entitlements determine which installation instructions are generated and
-included in the fulfillment email.
+These entitlements are applied to the Replicated license created during
+fulfillment.
 
 ## Salesforce Objects and Their Roles
 
@@ -102,14 +94,13 @@ included in the fulfillment email.
 5. **Validation Rules**: Ensure data integrity and enforce business rules.
 
 6. **Apex Classes**:
-   - `ReplicatedApplication`, `ReplicatedChannel`, `ReplicatedCustomer`,
-     `ReplicatedLicenseEntitlement`: Data models for Replicated entities.
-   - `ReplicatedPlatform`: Handles API interactions with Replicated.
+   - `ReplicatedCustomer`, `ReplicatedLicenseEntitlement`: Data models for
+     Replicated entities.
+   - `ReplicatedPlatform`: Handles API interactions with Replicated,
+     including license management and Enterprise Portal invitations.
    - `ReplicatedFulfillment`: Manages the entire fulfillment process,
-     including license generation, file attachments, and email sending.
+     including license creation and portal invitation.
    - `OrderTerms`: Extracts relevant information from the Order.
-   - `ReplicatedInstallInstructions`: Generates installation instructions
-     based on product configuration.
 
 7. **Apex Triggers**:
    - `CloseWonOpportunity`: Updates Opportunity status when a Contract is
@@ -136,10 +127,7 @@ included in the fulfillment email.
    ```
 4. Set up your products in Salesforce with the required custom fields.
 5. Create a `ReplicatedVendorPortalCredential__mdt` record with your API token.
-6. Configure the an email relay. I use [Mailgun](https://www.mailgun.com/) for this purpose.
-7. Create an organization-wide email address named "Fulfillment" to send the
-   emails.
-8. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
+6. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
 
 ## Usage
 
