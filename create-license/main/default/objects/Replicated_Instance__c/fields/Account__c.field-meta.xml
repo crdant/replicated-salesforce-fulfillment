@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Account__c</fullName>
+    <description>Parent Account for this Replicated instance</description>
+    <externalId>false</externalId>
+    <label>Account</label>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Replicated Instances</relationshipLabel>
+    <relationshipName>Replicated_Instances</relationshipName>
+    <required>true</required>
+    <type>Lookup</type>
+</CustomField>
