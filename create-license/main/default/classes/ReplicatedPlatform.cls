@@ -247,5 +247,26 @@ public class ReplicatedPlatform {
 
     }
 
+    public void inviteToPortal(String appId, String customerId, String email) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/enterprise-portal/customer-user');
+        req.setMethod('POST');
+        req.setHeader('Content-Type', 'application/json');
+        req.setHeader('Authorization', this.apiToken);
+
+        Map<String, String> body = new Map<String, String>();
+        body.put('customer_id', customerId);
+        body.put('email_address', email);
+        req.setBody(JSON.serialize(body));
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        if (res.getStatusCode() != 200 && res.getStatusCode() != 201) {
+            System.debug('Error inviting to portal: ' + res.getStatusCode() + ' ' + res.getStatus());
+            System.debug('Message: ' + res.getBody());
+        }
+    }
+
     public class ReplicatedAPIException extends Exception {}
 }
