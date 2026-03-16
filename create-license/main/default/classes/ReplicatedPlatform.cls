@@ -91,6 +91,22 @@ public class ReplicatedPlatform {
 
     }
 
+    public String getLicenseFile(String appId, String customerId) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/customer/' + customerId + '/license-download');
+        req.setMethod('GET');
+        req.setHeader('Authorization', this.apiToken);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        if (res.getStatusCode() != 200) {
+            System.debug('Error downloading license: ' + res.getStatusCode() + ' ' + res.getStatus());
+            return null;
+        }
+        return res.getBody();
+    }
+
     public void inviteToPortal(String appId, String customerId, String email) {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/enterprise-portal/customer-user');

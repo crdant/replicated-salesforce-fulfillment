@@ -22,6 +22,30 @@ public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts
         update order;
     }
 
+    private void attachLicense(String appId, String customerId) {
+        String license = this.platform.getLicenseFile(appId, customerId);
+        if (license == null) {
+            return;
+        }
+
+        Id orderId = this.terms.orderId();
+
+        ContentVersion contentVersion = new ContentVersion();
+        contentVersion.VersionData = Blob.valueOf(license);
+        contentVersion.Title = 'Software License';
+        contentVersion.PathOnClient = 'license.yaml';
+        insert contentVersion;
+
+        Id docId = [SELECT ContentDocumentId FROM ContentVersion WHERE Id = :contentVersion.Id].ContentDocumentId;
+
+        ContentDocumentLink docLink = new ContentDocumentLink();
+        docLink.ContentDocumentId = docId;
+        docLink.LinkedEntityId = orderId;
+        docLink.ShareType = 'V';
+        docLink.Visibility = 'AllUsers';
+        insert docLink;
+    }
+
     public void execute(QueueableContext context) {
         ReplicatedCustomer customer = this.platform.loadCustomer(this.terms);
 
@@ -32,7 +56,9 @@ public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts
             this.platform.updateCustomer(customer);
         }
 
+        String appId = this.terms.applicationId();
         this.setLicenseId(customer.licenseId);
-        this.platform.inviteToPortal(this.terms.applicationId(), customer.id, this.terms.customerEmail());
+        this.attachLicense(appId, customer.id);
+        this.platform.inviteToPortal(appId, customer.id, this.terms.customerEmail());
     }
 }
