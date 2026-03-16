@@ -24,8 +24,11 @@
         <name>ApexTrigger</name>
     </types>
     <types>
+        <members>Replicated_Instance__c</members>
         <members>Replicated_Vendor_Portal_API_Credential__mdt</members>
-        <name>CustomObject</name>  
+        <members>Replicated_Webhook__e</members>
+        <members>Replicated_Webhook_Secret__mdt</members>
+        <name>CustomObject</name>
     </types>
     <types>
         <members>Order-Order Layout</members>
@@ -33,13 +36,32 @@
         <name>Layout</name>
     </types>
     <types>
+        <members>Account.Last_Synced_By__c</members>
+        <members>Account.Replicated_Channel__c</members>
+        <members>Account.Replicated_Customer_Id__c</members>
+        <members>Account.Replicated_License_Type__c</members>
+        <members>Lead.Replicated_Customer_Id__c</members>
+        <members>Lead.Replicated_License_Expiry__c</members>
+        <members>Order.LicenseId__c</members>
         <members>Product2.Application__c</members>
-        <members>Product2.ReleaseChannel__c</members>
+        <members>Product2.IsAddOn__c</members>
         <members>Product2.IsAdminConsoleEnabled__c</members>
         <members>Product2.IsAirgapEnabled__c</members>
         <members>Product2.IsEmbeddedClusterEnabled__c</members>
-        <members>Product2.IsAddOn__c</members>
-        <members>Order.LicenseId__c</members>
+        <members>Product2.ReleaseChannel__c</members>
+        <members>Replicated_Instance__c.Account__c</members>
+        <members>Replicated_Instance__c.App_Version__c</members>
+        <members>Replicated_Instance__c.Cloud_Provider__c</members>
+        <members>Replicated_Instance__c.Daily_Active_Users__c</members>
+        <members>Replicated_Instance__c.First_Check_In__c</members>
+        <members>Replicated_Instance__c.Instance_Id__c</members>
+        <members>Replicated_Instance__c.K8s_Distribution__c</members>
+        <members>Replicated_Instance__c.Last_Check_In__c</members>
+        <members>Replicated_Instance__c.Monthly_Active_Users__c</members>
+        <members>Replicated_Instance__c.Status__c</members>
+        <members>Replicated_Webhook__e.Customer_Id__c</members>
+        <members>Replicated_Webhook__e.Event_Type__c</members>
+        <members>Replicated_Webhook__e.Payload__c</members>
         <name>CustomField</name>
     </types>
     <types>

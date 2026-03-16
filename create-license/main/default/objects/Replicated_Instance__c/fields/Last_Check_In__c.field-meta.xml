@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Last_Check_In__c</fullName>
+    <description>Last instance check-in — measures engagement recency</description>
+    <externalId>false</externalId>
+    <label>Last Check-In</label>
+    <required>false</required>
+    <type>DateTime</type>
+</CustomField>
