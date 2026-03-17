@@ -39,17 +39,7 @@ When the data model was defined in PR #15 (issue #7), FLS was intentionally defe
 
 Added `<fieldPermissions>` XML blocks for all 10 fields across all 6 profiles in `create-license/main/default/profiles/`.
 
-### Admin Profile (read + edit for troubleshooting)
-
-```xml
-<fieldPermissions>
-    <editable>true</editable>
-    <field>Replicated_Instance__c.Account__c</field>
-    <readable>true</readable>
-</fieldPermissions>
-```
-
-### Non-Admin Profiles (read-only)
+### All Profiles (editable=false; Admin has ModifyAllData for troubleshooting)
 
 ```xml
 <fieldPermissions>
@@ -58,6 +48,8 @@ Added `<fieldPermissions>` XML blocks for all 10 fields across all 6 profiles in
     <readable>true</readable>
 </fieldPermissions>
 ```
+
+Fields not relevant to a profile's role use `readable=false` (least privilege).
 
 ### Fields Secured
 
@@ -78,14 +70,29 @@ All 10 custom fields on `Replicated_Instance__c`:
 
 ### Profiles Updated
 
-| Profile | editable | readable |
-|---------|----------|----------|
-| Admin | true | true |
-| ContractManager | false | true |
-| Custom: Marketing Profile | false | true |
-| Custom: Sales Profile | false | true |
-| Custom: Support Profile | false | true |
-| MarketingProfile | false | true |
+All profiles use `editable=false` (read-only object; Admin retains edit access via `ModifyAllData`). Read access follows least-privilege by role:
+
+| Field | Admin | Sales | Support | Marketing* | ContractMgr |
+|-------|-------|-------|---------|-----------|-------------|
+| Account__c | r | r | r | r | r |
+| Status__c | r | r | r | r | r |
+| App_Version__c | r | r | r | - | - |
+| Instance_Id__c | r | - | r | - | - |
+| Cloud_Provider__c | r | - | r | - | - |
+| K8s_Distribution__c | r | - | r | - | - |
+| Daily_Active_Users__c | r | r | - | r | - |
+| Monthly_Active_Users__c | r | r | - | r | - |
+| First_Check_In__c | r | r | r | - | - |
+| Last_Check_In__c | r | r | r | - | - |
+
+*Both Custom: Marketing Profile and MarketingProfile use the same permissions.
+
+**Role rationale:**
+- **Admin**: Full read (edit via ModifyAllData for troubleshooting)
+- **Sales**: Customer-facing data (account, status, usage metrics, version, check-ins)
+- **Support**: All fields (troubleshooting requires infrastructure details)
+- **Marketing**: Aggregate metrics (account, status, usage)
+- **ContractManager**: Minimal (account relationship and status only)
 
 ### Implementation Details
 
