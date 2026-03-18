@@ -59,6 +59,7 @@ All metadata uses API version **61.0**.
 
 ### Key Design Patterns
 
+- **Named Credentials for API auth**: Outbound Replicated API calls use the `Replicated_API` Named Credential with `Replicated_Vendor_Portal` External Credential. The API token is encrypted and injected at runtime -- Apex never handles the secret directly.
 - **Queueable for callouts**: All Replicated API calls go through Queueable classes (e.g., `ReplicatedFulfillment`) because Salesforce triggers can't make HTTP callouts directly.
 - **Platform Events for webhooks**: Inbound webhooks publish `Replicated_Webhook__e` Platform Events for async processing (decouples receipt from handling).
 - **SyncGuard for loop prevention**: Static sets (`SyncGuard.inboundSyncIds`) prevent infinite loops in bidirectional sync.
@@ -70,5 +71,4 @@ All metadata uses API version **61.0**.
 - `Order.LicenseId__c` — Stores generated Replicated license ID
 - `Replicated_Instance__c` — Tracks Replicated instances (read-only in SF)
 - `Replicated_Webhook__e` — Platform Event for inbound webhook processing
-- `Replicated_Vendor_Portal_API_Credential__mdt` — API token storage
 - `Replicated_Webhook_Secret__mdt` — HMAC signing secret storage

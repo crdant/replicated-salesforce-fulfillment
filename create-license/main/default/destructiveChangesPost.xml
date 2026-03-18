@@ -6,5 +6,13 @@
         <members>ReplicatedChannel</members>
         <name>ApexClass</name>
     </types>
+    <types>
+        <members>Replicated_Vendor_Portal_API_Credential__mdt</members>
+        <name>CustomObject</name>
+    </types>
+    <types>
+        <members>ReplicatedVendorPortal</members>
+        <name>RemoteSiteSetting</name>
+    </types>
     <version>61.0</version>
 </Package>

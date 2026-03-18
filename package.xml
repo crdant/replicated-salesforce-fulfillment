@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
-        <members>ReplicatedVendorPortal</members>
-        <name>RemoteSiteSetting</name>
+        <members>Replicated_Vendor_Portal</members>
+        <name>ExternalCredential</name>
+    </types>
+    <types>
+        <members>Replicated_API</members>
+        <name>NamedCredential</name>
+    </types>
+    <types>
+        <members>Replicated_API_Access</members>
+        <name>PermissionSet</name>
     </types>
     <types>
         <members>Admin</members>
@@ -26,7 +34,6 @@
     </types>
     <types>
         <members>Replicated_Instance__c</members>
-        <members>Replicated_Vendor_Portal_API_Credential__mdt</members>
         <members>Replicated_Webhook__e</members>
         <members>Replicated_Webhook_Secret__mdt</members>
         <name>CustomObject</name>

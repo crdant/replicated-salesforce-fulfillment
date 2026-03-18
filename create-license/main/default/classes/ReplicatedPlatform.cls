@@ -1,27 +1,24 @@
 public without sharing class ReplicatedPlatform {
 
-    private String apiToken { get; set; }
-
-    public ReplicatedPlatform(Replicated_Vendor_Portal_API_Credential__mdt credential) {
-        this.apiToken = credential.ApiToken__c;
+    public ReplicatedPlatform() {
+        // No credential needed — Named Credential handles auth
     }
 
     public ReplicatedCustomer loadCustomer(OrderTerms terms) {
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('https://api.replicated.com/vendor/v3/customers/search');
+        req.setEndpoint('callout:Replicated_API/vendor/v3/customers/search');
         req.setMethod('POST');
         req.setHeader('accept', 'application/json');
         req.setHeader('content-type', 'application/json');
-        req.setHeader('Authorization', this.apiToken);
-        
+
         String query = 'customId:' + terms.accountId();
         String requestBody = '{"app_id":"' + terms.applicationId() + '","query":"' + query + '","include_paid":true,"include_active":true,"include_inactive":true}';
         req.setBody(requestBody);
-        
+
         Http http = new Http();
         HttpResponse res = http.send(req);
 
-        
+
         if (res.getStatusCode() == 200) {
             // Parse the JSON response
             Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
@@ -36,7 +33,7 @@ public without sharing class ReplicatedPlatform {
                 }
             }
             throw new ReplicatedAPIException('Error parsing response from Replicated API');
-        } 
+        }
         return null ;
     }
 
@@ -45,15 +42,14 @@ public without sharing class ReplicatedPlatform {
         System.debug('Creating license for customer: ' + customer.name);
 
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('https://api.replicated.com/vendor/v3/customer');
+        req.setEndpoint('callout:Replicated_API/vendor/v3/customer');
         req.setMethod('POST');
         req.setHeader('Content-Type', 'application/json');
-        req.setHeader('Authorization', this.apiToken);
         req.setBody(customer.createRequest());
-        
+
         Http http = new Http();
         HttpResponse res = http.send(req);
-        
+
         if (res.getStatusCode() != 201) {
             // Handle error
             System.debug('Error: ' + res.getStatusCode() + ' ' + res.getStatus());
@@ -71,15 +67,14 @@ public without sharing class ReplicatedPlatform {
         System.debug('Updating license for customer: ' + customer.name);
 
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('https://api.replicated.com/vendor/v3/customer');
+        req.setEndpoint('callout:Replicated_API/vendor/v3/customer');
         req.setMethod('PUT');
         req.setHeader('Content-Type', 'application/json');
-        req.setHeader('Authorization', this.apiToken);
         req.setBody(customer.createRequest());
-        
+
         Http http = new Http();
         HttpResponse res = http.send(req);
-        
+
         if (res.getStatusCode() != 201) {
             // Handle error
             System.debug('Error: ' + res.getStatusCode() + ' ' + res.getStatus());
@@ -93,9 +88,8 @@ public without sharing class ReplicatedPlatform {
 
     public String getLicenseFile(String appId, String customerId) {
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/customer/' + customerId + '/license-download');
+        req.setEndpoint('callout:Replicated_API/vendor/v3/app/' + appId + '/customer/' + customerId + '/license-download');
         req.setMethod('GET');
-        req.setHeader('Authorization', this.apiToken);
 
         Http http = new Http();
         HttpResponse res = http.send(req);
@@ -109,10 +103,9 @@ public without sharing class ReplicatedPlatform {
 
     public void inviteToPortal(String appId, String customerId, String email) {
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('https://api.replicated.com/vendor/v3/app/' + appId + '/enterprise-portal/customer-user');
+        req.setEndpoint('callout:Replicated_API/vendor/v3/app/' + appId + '/enterprise-portal/customer-user');
         req.setMethod('POST');
         req.setHeader('Content-Type', 'application/json');
-        req.setHeader('Authorization', this.apiToken);
 
         Map<String, String> body = new Map<String, String>();
         body.put('customer_id', customerId);
