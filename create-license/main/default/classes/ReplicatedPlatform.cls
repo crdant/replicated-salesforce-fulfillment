@@ -2,7 +2,7 @@ public class ReplicatedPlatform {
 
     private String apiToken { get; set; }
 
-    public ReplicatedPlatform(ReplicatedVendorPortalCredential__mdt credential) {
+    public ReplicatedPlatform(Replicated_Vendor_Portal_API_Credential__mdt credential) {
         this.apiToken = credential.ApiToken__c;
     }
 

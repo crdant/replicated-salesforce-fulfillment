@@ -46,9 +46,9 @@ Named Credentials (External Credential + Named Credential, API 56.0+) are the Sa
 **Before** (plaintext CMT):
 ```apex
 // ReplicatedFulfillment.cls
-ReplicatedVendorPortalCredential__mdt cred = [
+Replicated_Vendor_Portal_API_Credential__mdt cred = [
     SELECT ApiToken__c
-    FROM ReplicatedVendorPortalCredential__mdt
+    FROM Replicated_Vendor_Portal_API_Credential__mdt
     WHERE DeveloperName = 'Default'
     LIMIT 1
 ];

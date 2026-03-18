@@ -64,5 +64,5 @@ All metadata uses API version **61.0**.
 - `Order.LicenseId__c` — Stores generated Replicated license ID
 - `Replicated_Instance__c` — Tracks Replicated instances (read-only in SF)
 - `Replicated_Webhook__e` — Platform Event for inbound webhook processing
-- `ReplicatedVendorPortalCredential__mdt` — API token storage
+- `Replicated_Vendor_Portal_API_Credential__mdt` — API token storage
 - `Replicated_Webhook_Secret__mdt` — HMAC signing secret storage
