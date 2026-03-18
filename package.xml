@@ -48,6 +48,8 @@
         <members>Product2.IsAdminConsoleEnabled__c</members>
         <members>Product2.IsAirgapEnabled__c</members>
         <members>Product2.IsEmbeddedClusterEnabled__c</members>
+        <members>Product2.IsSnapshotSupported__c</members>
+        <members>Product2.IsSupportBundleUploadEnabled__c</members>
         <members>Product2.ReleaseChannel__c</members>
         <members>Replicated_Instance__c.Account__c</members>
         <members>Replicated_Instance__c.App_Version__c</members>
