@@ -5,9 +5,9 @@ public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts
 
     public ReplicatedFulfillment(OrderTerms terms) {
         this.terms = terms;
-        ReplicatedVendorPortalCredential__mdt defaultCredential = [
+        Replicated_Vendor_Portal_API_Credential__mdt defaultCredential = [
             SELECT ApiToken__c
-            FROM ReplicatedVendorPortalCredential__mdt
+            FROM Replicated_Vendor_Portal_API_Credential__mdt
             WHERE DeveloperName = 'Default'
             LIMIT 1
         ];

@@ -79,7 +79,7 @@ fulfillment.
 
 ## Salesforce Objects and Their Roles
 
-1. **ReplicatedVendorPortalCredential__mdt**: Stores API credentials for
+1. **Replicated_Vendor_Portal_API_Credential__mdt**: Stores API credentials for
    authenticating with the Replicated Vendor Portal.
 
 2. **Product2**: Represents your products and their configurations. There are
@@ -126,7 +126,7 @@ fulfillment.
    make deploy
    ```
 4. Set up your products in Salesforce with the required custom fields.
-5. Create a `ReplicatedVendorPortalCredential__mdt` record with your API token.
+5. Create a `Replicated_Vendor_Portal_API_Credential__mdt` record with your API token.
 6. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
 
 ## Salesforce Site Setup
