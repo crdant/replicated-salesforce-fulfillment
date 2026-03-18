@@ -55,11 +55,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>Replicated_Instance__c.Account__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>false</editable>
         <field>Replicated_Instance__c.App_Version__c</field>
         <readable>true</readable>
     </fieldPermissions>
