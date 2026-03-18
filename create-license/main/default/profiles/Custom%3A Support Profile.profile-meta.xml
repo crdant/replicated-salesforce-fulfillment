@@ -70,11 +70,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>Replicated_Instance__c.Instance_Id__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>false</editable>
         <field>Replicated_Instance__c.K8s_Distribution__c</field>
         <readable>true</readable>
     </fieldPermissions>
