@@ -14,3 +14,6 @@ package.xml
 # ignore files supporting data import and cleanup
 hack/**
 data/**
+
+# don't redeploy everything a worktree
+.worktrees/**

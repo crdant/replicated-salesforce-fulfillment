@@ -59,8 +59,14 @@ delete pricebookEntriesToDelete;
 List<Product2> productsToDelete = [SELECT Id FROM Product2];
 delete productsToDelete;
 
+List<Case> casesToDelete = [SELECT Id FROM Case];
+delete casesToDelete;
+
 List<Contact> contactsToDelete = [SELECT Id FROM Contact];
 delete contactsToDelete;
+
+List<Entitlement> entitlementsToDelete = [SELECT Id FROM Entitlement];
+delete entitlementsToDelete;
 
 List<Account> accountsToDelete = [SELECT Id FROM Account];
 delete accountsToDelete;
