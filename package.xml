@@ -42,7 +42,9 @@
         <members>Account.Replicated_Customer_Id__c</members>
         <members>Account.Replicated_License_Type__c</members>
         <members>Lead.Replicated_Customer_Id__c</members>
+        <members>Lead.Replicated_Channel__c</members>
         <members>Lead.Replicated_License_Expiry__c</members>
+        <members>Lead.Replicated_License_Type__c</members>
         <members>Order.LicenseId__c</members>
         <members>Product2.Application__c</members>
         <members>Product2.IsAddOn__c</members>

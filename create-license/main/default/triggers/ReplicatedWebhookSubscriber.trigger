@@ -17,6 +17,15 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
             when 'customer.license.expiring' {
                 licenseExpiringEvents.add(event);
             }
+            when 'Pending Self-Service Signup' {
+                System.enqueueJob(new TrialSignupHandler(event.Payload__c));
+            }
+            when 'customer.created' {
+                System.enqueueJob(new CustomerCreatedHandler(event.Payload__c));
+            }
+            when 'Release Assets Downloaded' {
+                System.enqueueJob(new AssetDownloadedHandler(event.Payload__c));
+            }
             when else {
                 System.debug('Unhandled Replicated webhook event type: ' + event.Event_Type__c);
             }
