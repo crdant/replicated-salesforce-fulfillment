@@ -41,12 +41,12 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>Product2.IsSnapshotSupported__c</field>
-        <readable>true</readable>
+        <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
         <field>Product2.IsSupportBundleUploadEnabled__c</field>
-        <readable>true</readable>
+        <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
