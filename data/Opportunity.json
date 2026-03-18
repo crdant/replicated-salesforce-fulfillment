@@ -9,7 +9,7 @@
       "StageName": "Proposal/Price Quote",
       "Amount": 320000,
       "CloseDate": "2024-06-29",
-      "Pricebook2Id": "01saj000004bZqwAAE",
+      "Pricebook2Id": "01sdL00000Ks6SQQAZ",
       "AccountId": "@AccountRef2"
     },
     {
@@ -21,7 +21,7 @@
       "StageName": "Proposal/Price Quote",
       "Amount": 185000,
       "CloseDate": "2024-07-08",
-      "Pricebook2Id": "01saj000004bZqwAAE",
+      "Pricebook2Id": "01sdL00000Ks6SQQAZ",
       "AccountId": "@AccountRef6"
     },
     {
@@ -33,7 +33,7 @@
       "StageName": "Proposal/Price Quote",
       "Amount": 85000,
       "CloseDate": "2024-07-08",
-      "Pricebook2Id": "01saj000004bZqwAAE",
+      "Pricebook2Id": "01sdL00000Ks6SQQAZ",
       "AccountId": "@AccountRef19"
     },
     {
@@ -45,7 +45,7 @@
       "StageName": "Proposal/Price Quote",
       "Amount": 106000,
       "CloseDate": "2024-06-28",
-      "Pricebook2Id": "01saj000004bZqwAAE",
+      "Pricebook2Id": "01sdL00000Ks6SQQAZ",
       "AccountId": "@AccountRef20"
     }
   ]
