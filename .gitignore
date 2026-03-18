@@ -39,6 +39,9 @@ ehthumbs.db
 [Dd]esktop.ini
 $RECYCLE.BIN/
 
+# Generated custom metadata records (may contain secrets)
+create-license/main/default/customMetadata/
+
 # Local environment variables
 .env
 
