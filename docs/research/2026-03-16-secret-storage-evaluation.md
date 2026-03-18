@@ -67,7 +67,7 @@ Named Credentials are the Salesforce-standard mechanism for storing credentials 
 **Implementation impact:**
 - Create `ExternalCredential` and `NamedCredential` metadata (deployable via SFDX)
 - Populate the token value post-deployment via Setup UI or Connect REST API (secrets are excluded from metadata by design)
-- Refactor `ReplicatedPlatform.cls`: replace hardcoded endpoints with `callout:Replicated_API/path`, remove manual `Authorization` header, remove constructor dependency on `ReplicatedVendorPortalCredential__mdt`
+- Refactor `ReplicatedPlatform.cls`: replace hardcoded endpoints with `callout:Replicated_API/path`, remove manual `Authorization` header, remove constructor dependency on `Replicated_Vendor_Portal_API_Credential__mdt`
 - Refactor `ReplicatedFulfillment.cls`: remove SOQL query for credential CMT
 - Remove `Replicated_Vendor_Portal_API_Credential__mdt` and `ReplicatedVendorPortal.remoteSite-meta.xml`
 - Create Permission Set for External Credential Principal Access
@@ -172,7 +172,7 @@ create-license/main/default/
 
 ```apex
 // Before (ReplicatedPlatform.cls)
-public ReplicatedPlatform(ReplicatedVendorPortalCredential__mdt credential) {
+public ReplicatedPlatform(Replicated_Vendor_Portal_API_Credential__mdt credential) {
     this.apiToken = credential.ApiToken__c;
 }
 // ...
