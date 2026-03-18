@@ -37,7 +37,9 @@ When the data model was defined in PR #15 (issue #7), FLS was intentionally defe
 
 ## Solution
 
-Added `<fieldPermissions>` XML blocks for all 10 fields across all 6 profiles in `create-license/main/default/profiles/`.
+Added `<fieldPermissions>` XML blocks for all non-required fields across all 6 profiles in `create-license/main/default/profiles/`.
+
+> **Note:** `Instance_Id__c` is defined with `<required>true</required>`. Salesforce automatically grants visibility to required fields at the platform level and rejects deployments that include explicit `fieldPermissions` for them. This field has implicit read access for all profiles and cannot have explicit FLS entries.
 
 ### All Profiles (editable=false; Admin has ModifyAllData for troubleshooting)
 
@@ -53,20 +55,22 @@ Fields not relevant to a profile's role use `readable=false` (least privilege).
 
 ### Fields Secured
 
-All 10 custom fields on `Replicated_Instance__c`:
+9 of 10 custom fields on `Replicated_Instance__c` have explicit FLS. `Instance_Id__c` is exempt because it is a required field (see note above).
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `Account__c` | Lookup | Owner account relationship |
-| `App_Version__c` | Text | Running application version |
-| `Cloud_Provider__c` | Text | Infrastructure provider |
-| `Daily_Active_Users__c` | Number | Daily usage metric |
-| `First_Check_In__c` | DateTime | Initial instance check-in |
-| `Instance_Id__c` | Text (External ID) | Replicated instance identifier |
-| `K8s_Distribution__c` | Text | Kubernetes distribution |
-| `Last_Check_In__c` | DateTime | Most recent check-in |
-| `Monthly_Active_Users__c` | Number | Monthly usage metric |
-| `Status__c` | Picklist | Instance lifecycle status |
+| Field | Type | Purpose | Explicit FLS? |
+|-------|------|---------|---------------|
+| `Account__c` | Lookup (required) | Owner account relationship | Yes* |
+| `App_Version__c` | Text | Running application version | Yes |
+| `Cloud_Provider__c` | Text | Infrastructure provider | Yes |
+| `Daily_Active_Users__c` | Number | Daily usage metric | Yes |
+| `First_Check_In__c` | DateTime | Initial instance check-in | Yes |
+| `Instance_Id__c` | Text (External ID, required) | Replicated instance identifier | No — implicit |
+| `K8s_Distribution__c` | Text | Kubernetes distribution | Yes |
+| `Last_Check_In__c` | DateTime | Most recent check-in | Yes |
+| `Monthly_Active_Users__c` | Number | Monthly usage metric | Yes |
+| `Status__c` | Picklist | Instance lifecycle status | Yes |
+
+*`Account__c` is a required Lookup field. Salesforce accepts explicit FLS for required Lookup/relationship fields (unlike required Text fields), so its FLS entries are retained.
 
 ### Profiles Updated
 
@@ -77,7 +81,7 @@ All profiles use `editable=false` (read-only object; Admin retains edit access v
 | Account__c | r | r | r | r | r |
 | Status__c | r | r | r | r | r |
 | App_Version__c | r | r | r | - | - |
-| Instance_Id__c | r | - | r | - | - |
+| Instance_Id__c | *(implicit — required field, readable by all profiles)* |||||
 | Cloud_Provider__c | r | - | r | - | - |
 | K8s_Distribution__c | r | - | r | - | - |
 | Daily_Active_Users__c | r | r | - | r | - |
@@ -97,13 +101,13 @@ All profiles use `editable=false` (read-only object; Admin retains edit access v
 ### Implementation Details
 
 - Entries inserted alphabetically after existing `Product2` field permissions, before `<layoutAssignments>`
-- Each profile received exactly 10 field permission blocks (60 total across 6 profiles)
+- Each profile received 9 explicit field permission blocks (54 total across 6 profiles); `Instance_Id__c` is omitted because it is a required field
 - Matches existing XML formatting conventions (4-space indent, `editable` before `field` before `readable`)
 
 ## Verification
 
-1. **Field count**: `grep -c "Replicated_Instance__c" create-license/main/default/profiles/*.profile-meta.xml` — expect 10 per file, 60 total
-2. **Admin editable**: `grep -B1 "Replicated_Instance__c" create-license/main/default/profiles/Admin.profile-meta.xml | grep editable` — all `true`
+1. **Field count**: `grep -c "Replicated_Instance__c" create-license/main/default/profiles/*.profile-meta.xml` — expect 9 per file, 54 total (Instance_Id__c excluded as a required field)
+2. **Admin editable**: `grep -B1 "Replicated_Instance__c" create-license/main/default/profiles/Admin.profile-meta.xml | grep editable` — all `false`
 3. **Non-Admin read-only**: Same grep on other profiles — all `false`
 4. **Deploy**: `make deploy` — no validation errors
 
@@ -112,6 +116,8 @@ All profiles use `editable=false` (read-only object; Admin retains edit access v
 ### Always include FLS with field definitions
 
 When adding custom fields to a Salesforce DX project, the fieldPermissions entries in profiles must ship in the **same PR** as the field definitions. Never defer FLS to a follow-up.
+
+**Exception — required fields:** Fields with `<required>true</required>` (non-Lookup types) cannot have explicit `fieldPermissions` in profile metadata. Salesforce automatically grants visibility to required fields and rejects deployments that include redundant FLS for them. Required Lookup fields are an exception to the exception — Salesforce accepts explicit FLS for required relationship fields.
 
 **Atomic PR structure:**
 ```
@@ -125,7 +131,8 @@ profiles/ContractManager.profile-meta.xml                         <- UPDATED wit
 
 - [ ] Does the PR add new fields to `objects/*/fields/`?
 - [ ] If yes, do ALL profiles have corresponding `<fieldPermissions>` entries?
-- [ ] Field count in `objects/` matches fieldPermissions count per profile?
+- [ ] Are any new fields `<required>true</required>` (non-Lookup)? If so, they must NOT have `fieldPermissions` entries.
+- [ ] Field count in `objects/` matches fieldPermissions count per profile (minus required non-Lookup fields)?
 - [ ] Editable/readable settings match the field's intended access pattern?
 
 ### Quick validation command

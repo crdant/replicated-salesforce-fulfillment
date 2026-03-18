@@ -61,7 +61,7 @@ Implemented differentiated `readable` settings based on each profile's business 
 | Account__c | r | r | r | r | r |
 | Status__c | r | r | r | r | r |
 | App_Version__c | r | r | r | - | - |
-| Instance_Id__c | r | - | r | - | - |
+| Instance_Id__c | *(implicit — required field, readable by all profiles)* |||||
 | Cloud_Provider__c | r | - | r | - | - |
 | K8s_Distribution__c | r | - | r | - | - |
 | Daily_Active_Users__c | r | r | - | r | - |
@@ -84,7 +84,7 @@ Implemented differentiated `readable` settings based on each profile's business 
 - **Account__c** (universal): Core relationship field; all roles need customer context
 - **Status__c** (universal): Operational health indicator relevant to all functions
 - **App_Version__c** (Admin, Sales, Support): Version context for customer conversations and diagnostics
-- **Instance_Id__c** (Admin, Support): Replicated platform reconciliation key; only needed for technical diagnostics
+- **Instance_Id__c** (all profiles, implicit): Replicated platform reconciliation key. Defined as `<required>true</required>`, so Salesforce grants implicit read access to all profiles — explicit FLS cannot restrict visibility for required non-Lookup fields
 - **Cloud_Provider__c** (Admin, Support): Infrastructure metadata for troubleshooting
 - **K8s_Distribution__c** (Admin, Support): Deployment detail for technical support
 - **Daily/Monthly_Active_Users__c** (Admin, Sales, Marketing): Business metrics for engagement tracking and reporting
@@ -100,29 +100,37 @@ Implemented differentiated `readable` settings based on each profile's business 
 
 ## Verification
 
+> **Note:** `Instance_Id__c` is a required field and has no explicit `fieldPermissions` entries. Counts below reflect only the 9 fields with explicit FLS.
+
 ```bash
 # Verify Admin: all editable=false, all readable=true
 grep -B1 "Replicated_Instance__c" create-license/main/default/profiles/Admin.profile-meta.xml | grep editable
 # Expected: all <editable>false</editable>
 
-# Verify ContractManager: only Account__c and Status__c readable
+# Verify ContractManager: only Account__c and Status__c readable (explicit FLS)
 grep -A1 "Replicated_Instance__c" create-license/main/default/profiles/ContractManager.profile-meta.xml | grep readable
-# Expected: 2 true, 8 false
+# Expected: 2 true, 7 false
 
-# Verify Support: all readable=true (full troubleshooting access)
+# Verify Support: all explicit fields readable=true (full troubleshooting access)
 grep -A1 "Replicated_Instance__c" "create-license/main/default/profiles/Custom%3A Support Profile.profile-meta.xml" | grep -c "readable>true"
-# Expected: 10
+# Expected: 9
 
-# Full matrix validation
+# Full matrix validation (explicit FLS only; Instance_Id__c implicit for all)
 for f in create-license/main/default/profiles/*.profile-meta.xml; do
   name=$(basename "$f")
   readable_count=$(grep -A1 "Replicated_Instance__c" "$f" | grep -c "readable>true")
-  echo "$name: $readable_count readable fields"
+  echo "$name: $readable_count readable fields (explicit)"
 done
-# Expected: Admin=10, Sales=7, Support=10, Marketing=4, MarketingProfile=4, ContractManager=2
+# Expected: Admin=9, Sales=7, Support=9, Marketing=4, MarketingProfile=4, ContractManager=2
 ```
 
 ## Prevention
+
+### Required fields cannot have explicit FLS
+
+Salesforce automatically grants visibility to fields with `<required>true</required>` and rejects deployments that include explicit `fieldPermissions` for them. This applies to non-Lookup field types (Text, Number, DateTime, etc.). Required Lookup/relationship fields are an exception — Salesforce accepts explicit FLS for those.
+
+When a field must be required for data integrity but you want to restrict visibility, consider enforcing the requirement at the Apex layer (e.g., a before-insert trigger) instead of using the `<required>true</required>` field attribute.
 
 ### FLS should reflect business roles, not binary access
 
