@@ -1,6 +1,8 @@
 @RestResource(urlMapping='/replicated/webhook')
 global class ReplicatedWebhookReceiver {
 
+    private static final Integer MAX_PAYLOAD_LENGTH = 100000;
+
     @TestVisible
     private static String testSecret = null;
 
@@ -8,8 +10,16 @@ global class ReplicatedWebhookReceiver {
     global static void handlePost() {
         RestRequest req = RestContext.request;
         RestResponse res = RestContext.response;
+        res.addHeader('Content-Type', 'application/json');
 
         String body = req.requestBody.toString();
+
+        if (body.length() > MAX_PAYLOAD_LENGTH) {
+            res.statusCode = 413;
+            res.responseBody = Blob.valueOf('{"error":"Payload too large"}');
+            return;
+        }
+
         String signature = req.headers.get('X-Replicated-Signature');
 
         if (String.isBlank(signature)) {
@@ -19,6 +29,12 @@ global class ReplicatedWebhookReceiver {
         }
 
         String secret = getWebhookSecret();
+        if (secret == null) {
+            res.statusCode = 500;
+            res.responseBody = Blob.valueOf('{"error":"Server configuration error"}');
+            return;
+        }
+
         if (!verifySignature(body, signature, secret)) {
             res.statusCode = 401;
             res.responseBody = Blob.valueOf('{"error":"Invalid signature"}');
@@ -61,15 +77,30 @@ global class ReplicatedWebhookReceiver {
         res.responseBody = Blob.valueOf('{"status":"ok"}');
     }
 
-    @TestVisible
     private static Boolean verifySignature(String body, String signature, String secret) {
+        if (!signature.startsWith('sha256=')) {
+            return false;
+        }
+
         Blob mac = Crypto.generateMac(
             'HmacSHA256',
             Blob.valueOf(body),
             Blob.valueOf(secret)
         );
         String expected = 'sha256=' + EncodingUtil.convertToHex(mac);
-        return expected.equals(signature);
+
+        return constantTimeEquals(expected, signature);
+    }
+
+    private static Boolean constantTimeEquals(String a, String b) {
+        if (a.length() != b.length()) {
+            return false;
+        }
+        Integer result = 0;
+        for (Integer i = 0; i < a.length(); i++) {
+            result |= a.charAt(i) ^ b.charAt(i);
+        }
+        return result == 0;
     }
 
     @TestVisible
@@ -77,12 +108,16 @@ global class ReplicatedWebhookReceiver {
         if (testSecret != null) {
             return testSecret;
         }
-        Replicated_Webhook_Secret__mdt secretRecord = [
+        List<Replicated_Webhook_Secret__mdt> secrets = [
             SELECT Secret__c
             FROM Replicated_Webhook_Secret__mdt
             WHERE DeveloperName = 'Default'
             LIMIT 1
         ];
-        return secretRecord.Secret__c;
+        if (secrets.isEmpty()) {
+            System.debug(LoggingLevel.ERROR, 'Webhook secret not configured: no Replicated_Webhook_Secret__mdt record with DeveloperName=Default');
+            return null;
+        }
+        return secrets[0].Secret__c;
     }
 }

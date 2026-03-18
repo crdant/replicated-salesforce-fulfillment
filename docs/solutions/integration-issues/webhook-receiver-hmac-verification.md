@@ -72,13 +72,27 @@ Replicated sends `X-Replicated-Signature: sha256=<hex-encoded-hmac>`. Verificati
 
 ```apex
 private static Boolean verifySignature(String body, String signature, String secret) {
+    if (!signature.startsWith('sha256=')) {
+        return false;
+    }
     Blob mac = Crypto.generateMac(
         'HmacSHA256',
         Blob.valueOf(body),
         Blob.valueOf(secret)
     );
     String expected = 'sha256=' + EncodingUtil.convertToHex(mac);
-    return expected.equals(signature);
+    return constantTimeEquals(expected, signature);
+}
+
+private static Boolean constantTimeEquals(String a, String b) {
+    if (a.length() != b.length()) {
+        return false;
+    }
+    Integer result = 0;
+    for (Integer i = 0; i < a.length(); i++) {
+        result |= a.charAt(i) ^ b.charAt(i);
+    }
+    return result == 0;
 }
 ```
 
@@ -96,13 +110,16 @@ private static String getWebhookSecret() {
     if (testSecret != null) {
         return testSecret;
     }
-    Replicated_Webhook_Secret__mdt secretRecord = [
+    List<Replicated_Webhook_Secret__mdt> secrets = [
         SELECT Secret__c
         FROM Replicated_Webhook_Secret__mdt
         WHERE DeveloperName = 'Default'
         LIMIT 1
     ];
-    return secretRecord.Secret__c;
+    if (secrets.isEmpty()) {
+        return null;
+    }
+    return secrets[0].Secret__c;
 }
 ```
 
@@ -132,9 +149,10 @@ Database.SaveResult sr = EventBus.publish(event);
 ```apex
 trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
     for (Replicated_Webhook__e event : Trigger.New) {
+        // Avoid logging payload or customer data -- debug logs are visible to admins.
         switch on event.Event_Type__c {
             when else {
-                System.debug('Unhandled event type: ' + event.Event_Type__c);
+                System.debug('Unhandled Replicated webhook event type: ' + event.Event_Type__c);
             }
         }
     }
@@ -152,8 +170,9 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
 |--------|-----------|
 | 200 | Event published successfully |
 | 400 | Malformed JSON or missing event type |
-| 401 | Missing or invalid HMAC-SHA256 signature |
-| 500 | Platform Event publish failure |
+| 401 | Missing, invalid, or unsupported algorithm HMAC signature |
+| 413 | Payload exceeds 100K character limit |
+| 500 | Platform Event publish failure or missing webhook secret |
 
 ### Test Coverage
 
@@ -164,11 +183,11 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
 | testValidSignature | Valid HMAC + valid payload | 200 |
 | testInvalidSignature | Wrong HMAC value | 401 |
 | testMissingSignature | No X-Replicated-Signature header | 401 |
+| testUnsupportedSignatureAlgorithm | Non-sha256 prefix (e.g. `sha1=`) | 401 |
 | testMalformedJson | Unparseable body | 400 |
 | testMissingEventType | Valid JSON, no `event` field | 400 |
-| testCustomerCreatedEvent | `customer.created` event type | 200 |
-| testInstanceCreatedEvent | `instance.created` event type | 200 |
-| testVerifySignatureDirectly | Unit test of HMAC computation | Pass/fail |
+| testPayloadTooLarge | Body exceeds 100K character limit | 413 |
+| testMissingWebhookSecret | No metadata record configured | 500 |
 
 ## Prevention Strategies
 
@@ -194,8 +213,10 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
 
 ### HMAC Signature Security
 - Validate the `sha256=` prefix before comparing (reject unknown algorithms)
+- Use constant-time comparison to prevent timing attacks (XOR-based loop, not `String.equals()`)
 - Never log full signatures or secrets
 - Rotate webhook secrets periodically (update `Replicated_Webhook_Secret__mdt`)
+- `Replicated_Webhook_Secret__mdt.Secret__c` is stored as plaintext; for production orgs with strict security requirements, consider Named Credentials or Shield Platform Encryption
 
 ## Webhook Payload Format
 

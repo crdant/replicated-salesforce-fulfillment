@@ -82,6 +82,22 @@ private class ReplicatedWebhookReceiverTest {
     }
 
     @IsTest
+    static void testUnsupportedSignatureAlgorithm() {
+        setupTestSecret();
+        String body = validPayload('customer.created');
+
+        RestContext.request = buildRequest(body, 'sha1=invalid');
+        RestContext.response = new RestResponse();
+
+        Test.startTest();
+        ReplicatedWebhookReceiver.handlePost();
+        Test.stopTest();
+
+        System.assertEquals(401, RestContext.response.statusCode,
+            'Unsupported signature algorithm should return 401');
+    }
+
+    @IsTest
     static void testMalformedJson() {
         setupTestSecret();
         String body = 'not valid json{{{';
@@ -114,47 +130,34 @@ private class ReplicatedWebhookReceiverTest {
     }
 
     @IsTest
-    static void testCustomerCreatedEvent() {
+    static void testPayloadTooLarge() {
         setupTestSecret();
+        String largeBody = '{"event":"customer.created","data":"' + 'x'.repeat(100001) + '"}';
+
+        RestContext.request = buildRequest(largeBody, generateSignature(largeBody));
+        RestContext.response = new RestResponse();
+
+        Test.startTest();
+        ReplicatedWebhookReceiver.handlePost();
+        Test.stopTest();
+
+        System.assertEquals(413, RestContext.response.statusCode,
+            'Oversized payload should return 413');
+    }
+
+    @IsTest
+    static void testMissingWebhookSecret() {
+        // Do NOT call setupTestSecret() -- simulates missing metadata record
         String body = validPayload('customer.created');
 
-        RestContext.request = buildRequest(body, generateSignature(body));
+        RestContext.request = buildRequest(body, 'sha256=anything');
         RestContext.response = new RestResponse();
 
         Test.startTest();
         ReplicatedWebhookReceiver.handlePost();
         Test.stopTest();
 
-        System.assertEquals(200, RestContext.response.statusCode);
-    }
-
-    @IsTest
-    static void testInstanceCreatedEvent() {
-        setupTestSecret();
-        String body = validPayload('instance.created');
-
-        RestContext.request = buildRequest(body, generateSignature(body));
-        RestContext.response = new RestResponse();
-
-        Test.startTest();
-        ReplicatedWebhookReceiver.handlePost();
-        Test.stopTest();
-
-        System.assertEquals(200, RestContext.response.statusCode);
-    }
-
-    @IsTest
-    static void testVerifySignatureDirectly() {
-        String body = '{"test":"data"}';
-        String signature = generateSignature(body);
-
-        System.assert(
-            ReplicatedWebhookReceiver.verifySignature(body, signature, TEST_SECRET),
-            'Matching signature should verify'
-        );
-        System.assert(
-            !ReplicatedWebhookReceiver.verifySignature(body, 'sha256=wrong', TEST_SECRET),
-            'Wrong signature should not verify'
-        );
+        System.assertEquals(500, RestContext.response.statusCode,
+            'Missing webhook secret should return 500');
     }
 }

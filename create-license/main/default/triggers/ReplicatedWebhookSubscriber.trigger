@@ -1,14 +1,11 @@
 trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
     for (Replicated_Webhook__e event : Trigger.New) {
-        String eventType = event.Event_Type__c;
-        System.debug('Received Replicated webhook: ' + eventType +
-            ' for customer: ' + event.Customer_Id__c);
-
         // Route to appropriate handler based on event type.
         // Handler implementations are in separate issues (#11, #12).
-        switch on eventType {
+        // Avoid logging payload or customer data -- debug logs are visible to admins.
+        switch on event.Event_Type__c {
             when else {
-                System.debug('Unhandled Replicated webhook event type: ' + eventType);
+                System.debug('Unhandled Replicated webhook event type: ' + event.Event_Type__c);
             }
         }
     }
