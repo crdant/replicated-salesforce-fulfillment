@@ -64,6 +64,14 @@ Key characteristics extracted from PRs #1-5 (all by @crdant):
 - **No test plan section**
 - **No emoji or "Generated with Claude Code" footer**
 
+### Hard Rules
+
+These are non-negotiable, confirmed explicitly by the project owner:
+
+1. **Active voice throughout** — never passive ("was deployed", "is rejected")
+2. **Never refer to the changes/PR as an explicit subject** — no "The fix removes...", "The change updates...", "This PR adds...". Instead, state what happens directly: "Removes stale FLS entries..." or weave it into the narrative
+3. **First sentence of Details directly states what the code does** — lead with the action, not background context. Don't open with "Salesforce enforces a rule..." or "The CMT object was deployed as...". Open with what the code actually does, then explain why
+
 ## Solution
 
 Before writing PR descriptions:
