@@ -21,6 +21,7 @@
         <members>CloseWonOpportunity</members>
         <members>ActivateOrder</members>
         <members>FulfillOrder</members>
+        <members>ReplicatedWebhookSubscriber</members>
         <name>ApexTrigger</name>
     </types>
     <types>

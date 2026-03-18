@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+usage() {
+    echo "Usage: $0 -u SITE_URL -s SECRET [-e EVENT_TYPE]"
+    echo ""
+    echo "Sends a test webhook POST with a valid HMAC-SHA256 signature."
+    echo ""
+    echo "  -u  Salesforce Site URL (e.g. https://mysite.my.salesforce-sites.com)"
+    echo "  -s  Webhook signing secret (must match Replicated_Webhook_Secret__mdt)"
+    echo "  -e  Event type (default: customer.created)"
+    exit 1
+}
+
+EVENT_TYPE="customer.created"
+
+while getopts ":u:s:e:" opt; do
+  case $opt in
+    u)
+      SITE_URL=$OPTARG
+      ;;
+    s)
+      SECRET=$OPTARG
+      ;;
+    e)
+      EVENT_TYPE=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      usage
+      ;;
+  esac
+done
+
+if [ -z "$SITE_URL" ] || [ -z "$SECRET" ]; then
+    usage
+fi
+
+BODY=$(cat <<EOF
+{"event":"${EVENT_TYPE}","timestamp":"$(date -u +%Y-%m-%dT%H:%M:%SZ)","text":"Test webhook","data":{"app_id":"test-app","customer_id":"test-customer","customer_name":"Test Customer"}}
+EOF
+)
+
+SIGNATURE="sha256=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')"
+
+echo "Sending ${EVENT_TYPE} webhook to ${SITE_URL}..."
+echo "Signature: ${SIGNATURE}"
+echo ""
+
+curl --http1.1 -s -w "\nHTTP Status: %{http_code}\n" \
+    -X POST "${SITE_URL}/services/apexrest/replicated/webhook" \
+    -H "Content-Type: application/json" \
+    -H "X-Replicated-Signature: ${SIGNATURE}" \
+    -d "$BODY"
