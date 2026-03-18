@@ -49,7 +49,7 @@ echo "Sending ${EVENT_TYPE} webhook to ${SITE_URL}..."
 echo "Signature: ${SIGNATURE}"
 echo ""
 
-curl -s -w "\nHTTP Status: %{http_code}\n" \
+curl --http1.1 -s -w "\nHTTP Status: %{http_code}\n" \
     -X POST "${SITE_URL}/services/apexrest/replicated/webhook" \
     -H "Content-Type: application/json" \
     -H "X-Replicated-Signature: ${SIGNATURE}" \
