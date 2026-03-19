@@ -173,6 +173,92 @@ private class EpUserJoinedHandlerTest {
     }
 
     @IsTest
+    static void testBlankCustomerIdSkipped() {
+        // Build event with blank customer_id — should produce no records.
+        Map<String, Object> data = new Map<String, Object>{
+            'customer_id' => '',
+            'customer_name' => 'No ID Corp',
+            'joined_email' => 'noid@corp.com',
+            'is_first_user' => true
+        };
+        Map<String, Object> payload = new Map<String, Object>{
+            'event' => ReplicatedEventType.CUSTOMER_EP_USER_JOINED,
+            'data' => data
+        };
+        Replicated_Webhook__e event = new Replicated_Webhook__e(
+            Event_Type__c = ReplicatedEventType.CUSTOMER_EP_USER_JOINED,
+            Payload__c = JSON.serialize(payload)
+        );
+
+        Test.startTest();
+        System.enqueueJob(new EpUserJoinedHandler(new List<Replicated_Webhook__e>{ event }));
+        Test.stopTest();
+
+        List<Account> accounts = [SELECT Id FROM Account];
+        System.assertEquals(0, accounts.size(), 'Should not create records when customer_id is blank');
+    }
+
+    @IsTest
+    static void testEmailFallbackSkipsLeadWithDifferentCustomerId() {
+        // Lead belongs to a different customer — email fallback should NOT match it.
+        Lead lead = new Lead(
+            LastName = 'Other Customer Corp',
+            Company = 'Other Customer Corp',
+            Email = 'shared@corp.com',
+            LeadSource = 'Self-Service Trial',
+            Status = 'New',
+            Replicated_Customer_Id__c = 'cust_other',
+            Replicated_License_Type__c = 'trial',
+            Replicated_Channel__c = 'Stable'
+        );
+        insert lead;
+
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_new', 'New Corp', 'shared@corp.com', true)
+        };
+
+        Test.startTest();
+        System.enqueueJob(new EpUserJoinedHandler(events));
+        Test.stopTest();
+
+        // Lead should NOT be converted — it belongs to cust_other.
+        Lead unchanged = [SELECT Id, IsConverted FROM Lead WHERE Id = :lead.Id];
+        System.assert(!unchanged.IsConverted,
+            'Lead with different customer ID should not be converted via email fallback');
+
+        // Should fall through to direct-create path instead.
+        List<Account> accounts = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = 'cust_new'];
+        System.assertEquals(1, accounts.size(), 'Should create Account directly when email Lead has different customer');
+    }
+
+    @IsTest
+    static void testNonBooleanIsFirstUserSkipped() {
+        // Simulate is_first_user sent as a String instead of Boolean.
+        Map<String, Object> data = new Map<String, Object>{
+            'customer_id' => 'cust_strbool',
+            'customer_name' => 'String Bool Corp',
+            'joined_email' => 'strbool@corp.com',
+            'is_first_user' => 'true'
+        };
+        Map<String, Object> payload = new Map<String, Object>{
+            'event' => ReplicatedEventType.CUSTOMER_EP_USER_JOINED,
+            'data' => data
+        };
+        Replicated_Webhook__e event = new Replicated_Webhook__e(
+            Event_Type__c = ReplicatedEventType.CUSTOMER_EP_USER_JOINED,
+            Payload__c = JSON.serialize(payload)
+        );
+
+        Test.startTest();
+        System.enqueueJob(new EpUserJoinedHandler(new List<Replicated_Webhook__e>{ event }));
+        Test.stopTest();
+
+        List<Account> accounts = [SELECT Id FROM Account];
+        System.assertEquals(0, accounts.size(),
+            'Should gracefully skip when is_first_user is not a Boolean');
+    }
+
+    @IsTest
     static void testBulkEvents() {
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>();
         for (Integer i = 0; i < 200; i++) {

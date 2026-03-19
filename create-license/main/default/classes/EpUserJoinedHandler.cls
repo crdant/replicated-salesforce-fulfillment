@@ -28,17 +28,21 @@ public without sharing class EpUserJoinedHandler implements Queueable {
                 continue;
             }
 
-            // Only process first-user events.
+            // Only process first-user events. Use instanceof to guard against
+            // non-boolean payload values — a bad cast here would kill the batch.
             Object isFirstUser = data.get('is_first_user');
-            if (isFirstUser == null || !(Boolean) isFirstUser) {
+            if (!(isFirstUser instanceof Boolean) || !(Boolean) isFirstUser) {
+                continue;
+            }
+
+            String customerId = (String) data.get('customer_id');
+            if (String.isBlank(customerId)) {
+                System.debug(LoggingLevel.WARN, 'EpUserJoinedHandler: blank customer_id, skipping');
                 continue;
             }
 
             dataList.add(data);
-            String customerId = (String) data.get('customer_id');
-            if (String.isNotBlank(customerId)) {
-                customerIds.add(customerId);
-            }
+            customerIds.add(customerId);
             String joinedEmail = (String) data.get('joined_email');
             if (String.isNotBlank(joinedEmail)) {
                 joinedEmails.add(joinedEmail);
@@ -105,9 +109,14 @@ public without sharing class EpUserJoinedHandler implements Queueable {
             }
 
             // Look up Lead by customer ID first, then fall back to email.
+            // Email fallback only matches Leads with no customer ID set — prevents
+            // converting a Lead that belongs to a different Replicated customer.
             Lead lead = leadsByCustomerId.get(customerId);
             if (lead == null && String.isNotBlank(joinedEmail)) {
-                lead = leadsByEmail.get(joinedEmail);
+                Lead emailLead = leadsByEmail.get(joinedEmail);
+                if (emailLead != null && String.isBlank(emailLead.Replicated_Customer_Id__c)) {
+                    lead = emailLead;
+                }
             }
 
             if (lead != null) {
@@ -172,7 +181,13 @@ public without sharing class EpUserJoinedHandler implements Queueable {
         }
 
         if (!toUpdate.isEmpty()) {
-            update toUpdate;
+            List<Database.SaveResult> saveResults = Database.update(toUpdate, false);
+            for (Database.SaveResult sr : saveResults) {
+                if (!sr.isSuccess()) {
+                    System.debug(LoggingLevel.ERROR,
+                        'EpUserJoinedHandler: Account enrichment failed');
+                }
+            }
         }
     }
 
