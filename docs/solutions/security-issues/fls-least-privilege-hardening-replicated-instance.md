@@ -58,10 +58,10 @@ Implemented differentiated `readable` settings based on each profile's business 
 
 | Field | Admin | Sales | Support | Marketing* | ContractMgr |
 |-------|-------|-------|---------|-----------|-------------|
-| Account__c | r | r | r | r | r |
+| Account__c | *(implicit — required Lookup field, readable by all profiles)* |||||
+| Instance_Id__c | *(implicit — required Text field, readable by all profiles)* |||||
 | Status__c | r | r | r | r | r |
 | App_Version__c | r | r | r | - | - |
-| Instance_Id__c | *(implicit — required field, readable by all profiles)* |||||
 | Cloud_Provider__c | r | - | r | - | - |
 | K8s_Distribution__c | r | - | r | - | - |
 | Daily_Active_Users__c | r | r | - | r | - |
@@ -81,7 +81,7 @@ Implemented differentiated `readable` settings based on each profile's business 
 
 ### Field-by-field rationale
 
-- **Account__c** (universal): Core relationship field; all roles need customer context
+- **Account__c** (all profiles, implicit): Core relationship field. Defined as `<required>true</required>` Lookup, so Salesforce grants implicit read access to all profiles — explicit FLS cannot be deployed for any required field regardless of type
 - **Status__c** (universal): Operational health indicator relevant to all functions
 - **App_Version__c** (Admin, Sales, Support): Version context for customer conversations and diagnostics
 - **Instance_Id__c** (all profiles, implicit): Replicated platform reconciliation key. Defined as `<required>true</required>`, so Salesforce grants implicit read access to all profiles — explicit FLS cannot restrict visibility for required non-Lookup fields
@@ -94,41 +94,42 @@ Implemented differentiated `readable` settings based on each profile's business 
 
 - All `editable` values set to `false` across all 6 profiles (read-only object)
 - `readable` values differentiated per profile based on the matrix above
+- `Account__c` and `Instance_Id__c` have no explicit `fieldPermissions` entries (required fields — Salesforce manages visibility implicitly)
 - XML formatting preserved: 4-space indent, `editable` before `field` before `readable`
 - Alphabetical field ordering maintained within each profile
 - Documentation in `docs/solutions/security-issues/missing-field-level-security-configuration.md` updated with new permission matrix
 
 ## Verification
 
-> **Note:** `Instance_Id__c` is a required field and has no explicit `fieldPermissions` entries. Counts below reflect only the 9 fields with explicit FLS.
+> **Note:** `Instance_Id__c` and `Account__c` are required fields and have no explicit `fieldPermissions` entries. Counts below reflect only the 8 fields with explicit FLS.
 
 ```bash
 # Verify Admin: all editable=false, all readable=true
 grep -B1 "Replicated_Instance__c" create-license/main/default/profiles/Admin.profile-meta.xml | grep editable
 # Expected: all <editable>false</editable>
 
-# Verify ContractManager: only Account__c and Status__c readable (explicit FLS)
+# Verify ContractManager: only Status__c readable (explicit FLS)
 grep -A1 "Replicated_Instance__c" create-license/main/default/profiles/ContractManager.profile-meta.xml | grep readable
-# Expected: 2 true, 7 false
+# Expected: 1 true, 7 false
 
 # Verify Support: all explicit fields readable=true (full troubleshooting access)
 grep -A1 "Replicated_Instance__c" "create-license/main/default/profiles/Custom%3A Support Profile.profile-meta.xml" | grep -c "readable>true"
-# Expected: 9
+# Expected: 8
 
-# Full matrix validation (explicit FLS only; Instance_Id__c implicit for all)
+# Full matrix validation (explicit FLS only; Instance_Id__c and Account__c implicit for all)
 for f in create-license/main/default/profiles/*.profile-meta.xml; do
   name=$(basename "$f")
   readable_count=$(grep -A1 "Replicated_Instance__c" "$f" | grep -c "readable>true")
   echo "$name: $readable_count readable fields (explicit)"
 done
-# Expected: Admin=9, Sales=7, Support=9, Marketing=4, MarketingProfile=4, ContractManager=2
+# Expected: Admin=8, Sales=6, Support=8, Marketing=3, MarketingProfile=3, ContractManager=1
 ```
 
 ## Prevention
 
 ### Required fields cannot have explicit FLS
 
-Salesforce automatically grants visibility to fields with `<required>true</required>` and rejects deployments that include explicit `fieldPermissions` for them. This applies to non-Lookup field types (Text, Number, DateTime, etc.). Required Lookup/relationship fields are an exception — Salesforce accepts explicit FLS for those.
+Salesforce automatically grants visibility to fields with `<required>true</required>` and rejects deployments that include explicit `fieldPermissions` for them. This applies to all field types including Lookup/relationship fields — there are no exceptions for required fields.
 
 When a field must be required for data integrity but you want to restrict visibility, consider enforcing the requirement at the Apex layer (e.g., a before-insert trigger) instead of using the `<required>true</required>` field attribute.
 

@@ -6,6 +6,9 @@ global class ReplicatedWebhookReceiver {
     @TestVisible
     private static String testSecret = null;
 
+    @TestVisible
+    private static Boolean testSecretOverridden = false;
+
     @HttpPost
     global static void handlePost() {
         RestRequest req = RestContext.request;
@@ -105,7 +108,7 @@ global class ReplicatedWebhookReceiver {
 
     @TestVisible
     private static String getWebhookSecret() {
-        if (testSecret != null) {
+        if (testSecretOverridden) {
             return testSecret;
         }
         List<Replicated_Webhook_Secret__mdt> secrets = [
