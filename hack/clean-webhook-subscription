@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Removes Replicated webhook subscriptions named "Salesforce CRM Sync".
+
+SUBSCRIPTION_NAME="Salesforce CRM Sync"
+
+echo "Checking for webhook subscriptions to remove..."
+response=$(replicated api get /v3/notification_subscriptions)
+
+ids=$(echo "$response" | jq -r --arg name "$SUBSCRIPTION_NAME" \
+  '.subscriptions // [] | .[] | select(.name == $name) | .id')
+
+if [ -z "$ids" ]; then
+    echo "No subscription named \"${SUBSCRIPTION_NAME}\" found."
+    exit 0
+fi
+
+echo "$ids" | while read -r id; do
+    echo "Deleting subscription ${id}..."
+    replicated api delete "/v3/notification_subscription/${id}"
+done
+
+echo "Done."
