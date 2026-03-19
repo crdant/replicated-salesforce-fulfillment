@@ -10,6 +10,9 @@ credentials:
 webhook-secret:
 	hack/set-webhook-secret -o shortrib -s "${REPLICATED_WEBHOOK_SECRET}"
 
+channels:
+	hack/create-channel -a "$${REPLICATED_APP}" -n "$${REPLICATED_CHANNEL}"
+
 clean:
 	hack/clean -o "${ORG_ALIAS}"
 
