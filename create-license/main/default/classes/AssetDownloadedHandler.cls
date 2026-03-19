@@ -61,7 +61,7 @@ public without sharing class AssetDownloadedHandler implements Queueable {
             Account acc = accountsByCustomerId.get(customerId);
             if (acc == null) {
                 System.debug(LoggingLevel.WARN,
-                    'AssetDownloadedHandler: no Account found for customer_id ' + customerId + ', skipping');
+                    'AssetDownloadedHandler: no Account found for customer_id, skipping');
                 continue;
             }
 
@@ -80,13 +80,11 @@ public without sharing class AssetDownloadedHandler implements Queueable {
             ));
 
             String licenseType = (String) data.get('license_type');
-            if (licenseType == 'paid') {
+            String appId = (String) data.get('app_id');
+            if (licenseType == 'paid' && String.isNotBlank(appId)) {
                 paidEvents.add(data);
                 paidAccountIds.add(acc.Id);
-                String appId = (String) data.get('app_id');
-                if (String.isNotBlank(appId)) {
-                    paidAppIds.add(appId);
-                }
+                paidAppIds.add(appId);
             }
         }
 
@@ -168,10 +166,6 @@ public without sharing class AssetDownloadedHandler implements Queueable {
             }
 
             String appId = (String) data.get('app_id');
-            if (String.isBlank(appId)) {
-                continue;
-            }
-
             String key = acc.Id + ':' + appId;
             Order o = ordersByKey.get(key);
             if (o == null || updatedOrderIds.contains(o.Id)) {
