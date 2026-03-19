@@ -54,7 +54,7 @@ private class InstanceEventHandlerTest {
     @IsTest
     static void testInstanceCreated() {
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('instance.created', instanceCreatedPayload())
+            buildEvent(ReplicatedEventType.INSTANCE_CREATED, instanceCreatedPayload())
         };
 
         Test.startTest();
@@ -94,7 +94,7 @@ private class InstanceEventHandlerTest {
         insert existing;
 
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('instance.upgrade_completed', instanceUpgradedPayload())
+            buildEvent(ReplicatedEventType.INSTANCE_UPGRADE_COMPLETED, instanceUpgradedPayload())
         };
 
         Test.startTest();
@@ -126,7 +126,7 @@ private class InstanceEventHandlerTest {
         insert existing;
 
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('instance.inactive', instanceInactivePayload())
+            buildEvent(ReplicatedEventType.INSTANCE_INACTIVE, instanceInactivePayload())
         };
 
         Test.startTest();
@@ -155,7 +155,7 @@ private class InstanceEventHandlerTest {
 
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
             new Replicated_Webhook__e(
-                Event_Type__c = 'instance.created',
+                Event_Type__c = ReplicatedEventType.INSTANCE_CREATED,
                 Customer_Id__c = unknownCustomerId,
                 Payload__c = payload
             )
@@ -180,7 +180,7 @@ private class InstanceEventHandlerTest {
             '}}';
 
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('instance.created', payload)
+            buildEvent(ReplicatedEventType.INSTANCE_CREATED, payload)
         };
 
         Test.startTest();
@@ -198,7 +198,7 @@ private class InstanceEventHandlerTest {
         String payload = '{"event":"instance.created"}';
 
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('instance.created', payload)
+            buildEvent(ReplicatedEventType.INSTANCE_CREATED, payload)
         };
 
         Test.startTest();
@@ -228,8 +228,8 @@ private class InstanceEventHandlerTest {
         Account acc = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = :CUSTOMER_ID LIMIT 1];
 
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('instance.created', instanceCreatedPayload()),
-            buildEvent('instance.upgrade_completed', instanceUpgradedPayload())
+            buildEvent(ReplicatedEventType.INSTANCE_CREATED, instanceCreatedPayload()),
+            buildEvent(ReplicatedEventType.INSTANCE_UPGRADE_COMPLETED, instanceUpgradedPayload())
         };
 
         Test.startTest();

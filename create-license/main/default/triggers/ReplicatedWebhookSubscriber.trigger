@@ -13,6 +13,7 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
             continue;
         }
 
+        // Canonical keys defined in ReplicatedEventType.cls (switch on requires literals).
         switch on event.Event_Type__c {
             when 'instance.created', 'instance.upgrade_completed', 'instance.inactive' {
                 instanceEvents.add(event);
@@ -20,13 +21,13 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
             when 'customer.license_expiring' {
                 licenseExpiringEvents.add(event);
             }
-            when 'Pending Self-Service Signup' {
+            when 'customer.pending_signup' {
                 signupEvents.add(event);
             }
             when 'customer.created' {
                 customerCreatedEvents.add(event);
             }
-            when 'Release Assets Downloaded' {
+            when 'release.asset_downloaded' {
                 assetDownloadedEvents.add(event);
             }
             when else {

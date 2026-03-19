@@ -36,7 +36,7 @@ The initial implementation followed a one-event-one-job pattern:
 ```apex
 // BEFORE: per-event enqueue in the trigger (broken at scale)
 for (Replicated_Webhook__e event : Trigger.New) {
-    if (event.Event_Type__c == 'Pending Self-Service Signup') {
+    if (event.Event_Type__c == 'customer.pending_signup') {
         System.enqueueJob(new TrialSignupHandler(event));
     }
 }
@@ -70,9 +70,9 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
     for (Replicated_Webhook__e event : Trigger.New) {
         if (String.isBlank(event.Payload__c)) { continue; }
         switch on event.Event_Type__c {
-            when 'Pending Self-Service Signup' { signupEvents.add(event); }
+            when 'customer.pending_signup' { signupEvents.add(event); }
             when 'customer.created' { customerCreatedEvents.add(event); }
-            when 'Release Assets Downloaded' { assetDownloadedEvents.add(event); }
+            when 'release.asset_downloaded' { assetDownloadedEvents.add(event); }
             // ...
         }
     }

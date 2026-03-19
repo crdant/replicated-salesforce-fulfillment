@@ -37,7 +37,9 @@ private class ReplicatedWebhookReceiverTest {
     @IsTest
     static void testValidSignature() {
         setupTestSecret();
-        String body = validPayload('customer.created');
+        // Use a non-handler event type so the trigger routes to 'when else'
+        // and no Queueable handler runs — this test only validates HMAC verification.
+        String body = validPayload('test.signature_check');
 
         RestContext.request = buildRequest(body, generateSignature(body));
         RestContext.response = new RestResponse();
@@ -53,7 +55,7 @@ private class ReplicatedWebhookReceiverTest {
     @IsTest
     static void testInvalidSignature() {
         setupTestSecret();
-        String body = validPayload('customer.created');
+        String body = validPayload(ReplicatedEventType.CUSTOMER_CREATED);
 
         RestContext.request = buildRequest(body, 'sha256=invalid');
         RestContext.response = new RestResponse();
@@ -69,7 +71,7 @@ private class ReplicatedWebhookReceiverTest {
     @IsTest
     static void testMissingSignature() {
         setupTestSecret();
-        String body = validPayload('customer.created');
+        String body = validPayload(ReplicatedEventType.CUSTOMER_CREATED);
 
         RestContext.request = buildRequest(body, null);
         RestContext.response = new RestResponse();
@@ -85,7 +87,7 @@ private class ReplicatedWebhookReceiverTest {
     @IsTest
     static void testUnsupportedSignatureAlgorithm() {
         setupTestSecret();
-        String body = validPayload('customer.created');
+        String body = validPayload(ReplicatedEventType.CUSTOMER_CREATED);
 
         RestContext.request = buildRequest(body, 'sha1=invalid');
         RestContext.response = new RestResponse();
@@ -150,7 +152,7 @@ private class ReplicatedWebhookReceiverTest {
     static void testMissingWebhookSecret() {
         // Override the secret lookup without setting a value — simulates missing metadata record
         ReplicatedWebhookReceiver.testSecretOverridden = true;
-        String body = validPayload('customer.created');
+        String body = validPayload(ReplicatedEventType.CUSTOMER_CREATED);
 
         RestContext.request = buildRequest(body, 'sha256=anything');
         RestContext.response = new RestResponse();

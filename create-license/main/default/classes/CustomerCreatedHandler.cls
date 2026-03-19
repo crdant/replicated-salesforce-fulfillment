@@ -86,9 +86,17 @@ public without sharing class CustomerCreatedHandler implements Queueable {
             update toUpdate;
         }
         if (!toInsert.isEmpty()) {
-            insert toInsert;
-            for (Lead l : toInsert) {
-                SyncGuard.inboundSyncIds.add(l.Id);
+            Database.DMLOptions dmlOpts = new Database.DMLOptions();
+            dmlOpts.DuplicateRuleHeader.allowSave = true;
+            List<Database.SaveResult> results = Database.insert(toInsert, dmlOpts);
+            for (Integer i = 0; i < results.size(); i++) {
+                if (results[i].isSuccess()) {
+                    SyncGuard.inboundSyncIds.add(results[i].getId());
+                } else {
+                    System.debug(LoggingLevel.WARN,
+                        'CustomerCreatedHandler: failed to insert Lead: ' +
+                        results[i].getErrors()[0].getMessage());
+                }
             }
         }
     }

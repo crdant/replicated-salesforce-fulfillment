@@ -15,10 +15,16 @@ components:
   - create-license/main/default/classes/InstanceEventHandler.cls
   - create-license/main/default/classes/InstanceEventHandlerTest.cls
   - create-license/main/default/classes/LicenseExpiringHandlerTest.cls
+  - create-license/main/default/classes/TrialSignupHandlerTest.cls
+  - create-license/main/default/classes/AssetDownloadedHandlerTest.cls
 related_issues:
   - "#45"
   - "#67"
   - "#12"
+  - "#72"
+  - "#73"
+related_pr:
+  - 77
 ---
 
 # Webhook event type naming mismatch between Replicated API and Salesforce integration
@@ -76,6 +82,26 @@ when 'customer.license_expiring' {
 ```
 
 **Tests** (`InstanceEventHandlerTest.cls`, `LicenseExpiringHandlerTest.cls`): All event type string references updated to match.
+
+### Second round (PR #77, issue #73)
+
+Two remaining display-name cases in the trigger were missed in the first round because the trial lifecycle handlers were added later (PR #50). The trigger used human-readable display names that never matched actual webhook payloads.
+
+**Trigger** (`ReplicatedWebhookSubscriber.trigger`):
+
+```apex
+// BEFORE (wrong — display names):
+when 'Pending Self-Service Signup' {
+when 'Release Assets Downloaded' {
+
+// AFTER (correct — canonical API keys):
+when 'customer.pending_signup' {
+when 'release.asset_downloaded' {
+```
+
+**Tests** (`TrialSignupHandlerTest.cls`, `AssetDownloadedHandlerTest.cls`): All `Event_Type__c` assignments and `'event'` payload values updated from display names to canonical keys (3 occurrences each).
+
+**Documentation** (`docs/solutions/integration-issues/trial-handler-bulkification-governor-limit.md`): Code examples updated to use canonical keys (3 occurrences).
 
 ## Investigation Steps
 
@@ -143,5 +169,8 @@ Source: `replicatedhq/vandoor` `pkg/notifications/events/event.go` `GetAllEvents
 - [Webhook receiver HMAC verification](webhook-receiver-hmac-verification.md) — Platform Event and subscriber trigger architecture
 - [Wrong identifier type in API call](wrong-identifier-type-in-api-call.md) — Similar API field semantic mismatch pattern
 - [Salesforce data model review](salesforce-data-model-review-hardening.md) — `Event_Type__c` field design on `Replicated_Webhook__e`
+- [Trial handler bulkification](trial-handler-bulkification-governor-limit.md) — Code examples updated in PR #77
 - PR #67: Webhook subscription automation
 - PR #51: Instance and license event handlers (introduced the trigger cases)
+- PR #50: Trial lifecycle handlers (introduced the display-name cases)
+- PR #77: Fixes remaining display-name mismatches (issue #73)
