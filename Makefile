@@ -1,6 +1,10 @@
 ORG_ALIAS ?= shortrib
 
-setup-replicated: channels enterprise-portal entitlements webhook-subscription
+setup-replicated:
+	$(MAKE) channels
+	$(MAKE) enterprise-portal
+	$(MAKE) entitlements
+	$(MAKE) webhook-subscription
 
 deploy:
 	sf project deploy start --manifest package.xml --post-destructive-changes create-license/main/default/destructiveChangesPost.xml -o "$(ORG_ALIAS)"

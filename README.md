@@ -167,17 +167,7 @@ metadata and setting up your Salesforce Site.
    make setup-replicated
    ```
    This runs `channels`, `enterprise-portal`, `entitlements`, and
-   `webhook-subscription` in dependency order.
-
-3. Verify the configuration:
-   ```
-   make verify-replicated
-   ```
-
-4. To tear down Replicated resources:
-   ```
-   make replicated-clean
-   ```
+   `webhook-subscription` in sequence.
 
 ## Salesforce Site Setup
 

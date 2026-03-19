@@ -20,9 +20,10 @@ Salesforce DX project that integrates the Replicated Platform with Salesforce fo
 ### Common Commands
 
 ```bash
-make deploy      # Deploy to Salesforce org
-make retrieve    # Retrieve latest metadata from org
+make deploy                # Deploy to Salesforce org
+make retrieve              # Retrieve latest metadata from org
 make credentials           # Set Replicated API token
+make setup-replicated      # Configure all Replicated Platform resources (channels, portal, entitlements, webhooks)
 make channels              # Create or verify Replicated release channel (needs REPLICATED_APP, REPLICATED_CHANNEL)
 make webhook-subscription  # Create Replicated webhook subscription (needs REPLICATED_SITE_URL, REPLICATED_WEBHOOK_SECRET)
 make import                # Import sample data
