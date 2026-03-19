@@ -3,6 +3,9 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
     // Platform Event triggers can receive up to 2,000 events per batch.
     List<Replicated_Webhook__e> instanceEvents = new List<Replicated_Webhook__e>();
     List<Replicated_Webhook__e> licenseExpiringEvents = new List<Replicated_Webhook__e>();
+    List<Replicated_Webhook__e> signupEvents = new List<Replicated_Webhook__e>();
+    List<Replicated_Webhook__e> customerCreatedEvents = new List<Replicated_Webhook__e>();
+    List<Replicated_Webhook__e> assetDownloadedEvents = new List<Replicated_Webhook__e>();
 
     for (Replicated_Webhook__e event : Trigger.New) {
         // Avoid logging payload or customer data -- debug logs are visible to admins.
@@ -17,6 +20,15 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
             when 'customer.license.expiring' {
                 licenseExpiringEvents.add(event);
             }
+            when 'Pending Self-Service Signup' {
+                signupEvents.add(event);
+            }
+            when 'customer.created' {
+                customerCreatedEvents.add(event);
+            }
+            when 'Release Assets Downloaded' {
+                assetDownloadedEvents.add(event);
+            }
             when else {
                 System.debug('Unhandled Replicated webhook event type: ' + event.Event_Type__c);
             }
@@ -28,6 +40,15 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
     }
     if (!licenseExpiringEvents.isEmpty()) {
         System.enqueueJob(new LicenseExpiringHandler(licenseExpiringEvents));
+    }
+    if (!signupEvents.isEmpty()) {
+        System.enqueueJob(new TrialSignupHandler(signupEvents));
+    }
+    if (!customerCreatedEvents.isEmpty()) {
+        System.enqueueJob(new CustomerCreatedHandler(customerCreatedEvents));
+    }
+    if (!assetDownloadedEvents.isEmpty()) {
+        System.enqueueJob(new AssetDownloadedHandler(assetDownloadedEvents));
     }
 
     EventBus.TriggerContext.currentContext().setResumeCheckpoint(
