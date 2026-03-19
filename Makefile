@@ -21,6 +21,9 @@ channels:
 enterprise-portal:
 	hack/setup-enterprise-portal
 
+entitlements:
+	hack/create-license-field
+
 clean:
 	hack/clean -o "$(ORG_ALIAS)"
 
