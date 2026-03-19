@@ -1,4 +1,4 @@
-public class ReplicatedPlatform {
+public without sharing class ReplicatedPlatform {
 
     private String apiToken { get; set; }
 
