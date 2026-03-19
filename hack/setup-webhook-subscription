@@ -7,7 +7,14 @@ set -euo pipefail
 : "${REPLICATED_SITE_URL:?REPLICATED_SITE_URL is not set}"
 : "${REPLICATED_WEBHOOK_SECRET:?REPLICATED_WEBHOOK_SECRET is not set}"
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SUBSCRIPTION_NAME="Salesforce CRM Sync"
+WEBHOOK_PATH="/services/apexrest/replicated/webhook"
+
+# Resolve app metadata for event filters.
+app_metadata=$("$SCRIPT_DIR/resolve-app-metadata")
+app_id=$(echo "$app_metadata" | jq -r '.app_id')
+app_name=$(echo "$app_metadata" | jq -r '.app_name')
 
 echo "Checking for existing webhook subscription..."
 existing=$(replicated api get /v3/notification_subscriptions | \
@@ -20,23 +27,31 @@ if [ -n "$existing" ]; then
     exit 0
 fi
 
+# Strip trailing slash from site URL before appending the Apex REST path.
+webhook_url="${REPLICATED_SITE_URL%/}${WEBHOOK_PATH}"
+
 echo "Creating webhook subscription..."
+echo "  Webhook URL: ${webhook_url}"
+echo "  App filter:  ${app_name} (${app_id})"
+
 body=$(jq -n \
-  --arg url "$REPLICATED_SITE_URL" \
+  --arg url "$webhook_url" \
   --arg secret "$REPLICATED_WEBHOOK_SECRET" \
   --arg name "$SUBSCRIPTION_NAME" \
+  --arg appId "$app_id" \
+  --arg appName "$app_name" \
   '{
     name: $name,
     eventConfigs: [
-      { eventType: "customer.created",                   filters: {} },
-      { eventType: "customer.updated",                   filters: {} },
-      { eventType: "customer.license_expiring",          filters: {} },
-      { eventType: "customer.ep_user_joined",                filters: {} },
-      { eventType: "customer.pending_signup",               filters: {} },
-      { eventType: "release.asset_downloaded",               filters: {} },
-      { eventType: "instance.created",                   filters: {} },
-      { eventType: "instance.upgrade_completed",         filters: {} },
-      { eventType: "instance.inactive",                  filters: {} }
+      { eventType: "customer.created",           filters: { appId: $appId, appName: $appName } },
+      { eventType: "customer.updated",           filters: { appId: $appId, appName: $appName } },
+      { eventType: "customer.license_expiring",  filters: { appId: $appId, appName: $appName } },
+      { eventType: "customer.ep_user_joined",    filters: { appId: $appId, appName: $appName } },
+      { eventType: "customer.pending_signup",    filters: { appId: $appId, appName: $appName } },
+      { eventType: "release.asset_downloaded",   filters: { appId: $appId, appName: $appName } },
+      { eventType: "instance.created",           filters: { appId: $appId, appName: $appName } },
+      { eventType: "instance.upgrade_completed", filters: { appId: $appId, appName: $appName } },
+      { eventType: "instance.inactive",          filters: { appId: $appId, appName: $appName } }
     ],
     isEnabled: true,
     webhookUrl: $url,
