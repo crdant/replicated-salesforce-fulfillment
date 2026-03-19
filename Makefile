@@ -24,6 +24,9 @@ enterprise-portal:
 entitlements:
 	hack/create-license-field
 
+webhook-subscription:
+	hack/setup-webhook-subscription
+
 clean:
 	hack/clean -o "$(ORG_ALIAS)"
 

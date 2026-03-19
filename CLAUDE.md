@@ -22,15 +22,18 @@ Salesforce DX project that integrates the Replicated Platform with Salesforce fo
 ```bash
 make deploy      # Deploy to Salesforce org
 make retrieve    # Retrieve latest metadata from org
-make credentials # Set Replicated API token
-make import      # Import sample data
-make clean       # Clean up org data (use with caution)
+make credentials           # Set Replicated API token
+make channels              # Create or verify Replicated release channel (needs REPLICATED_APP, REPLICATED_CHANNEL)
+make webhook-subscription  # Create Replicated webhook subscription (needs REPLICATED_SITE_URL, REPLICATED_WEBHOOK_SECRET)
+make import                # Import sample data
+make clean                 # Clean up org data (use with caution)
 ```
 
 ### Utility Scripts
 
 ```bash
-hack/resolve-app-metadata  # Resolve app_name, app_id, channel_id from REPLICATED_APP and REPLICATED_CHANNEL env vars (JSON to stdout)
+hack/resolve-app-metadata      # Resolve app_name, app_id, channel_id from REPLICATED_APP and REPLICATED_CHANNEL env vars (JSON to stdout)
+hack/setup-webhook-subscription # Create Replicated webhook subscription; REPLICATED_SITE_URL is the Salesforce site webhook callback URL
 ```
 
 ### Salesforce API Version

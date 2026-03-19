@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Creates a Replicated event notification subscription for Salesforce CRM
+# sync, or prints the existing subscription ID if one already exists.
+
+: "${REPLICATED_SITE_URL:?REPLICATED_SITE_URL is not set}"
+: "${REPLICATED_WEBHOOK_SECRET:?REPLICATED_WEBHOOK_SECRET is not set}"
+
+SUBSCRIPTION_NAME="Salesforce CRM Sync"
+
+echo "Checking for existing webhook subscription..."
+existing=$(replicated api get /v3/notification_subscriptions | \
+  jq -e --arg name "$SUBSCRIPTION_NAME" \
+    '.subscriptions // [] | map(select(.name == $name)) | first // empty' 2>/dev/null) || true
+
+if [ -n "$existing" ]; then
+    id=$(echo "$existing" | jq -r '.id')
+    echo "Subscription \"${SUBSCRIPTION_NAME}\" already exists (id: ${id}), skipping creation."
+    exit 0
+fi
+
+echo "Creating webhook subscription..."
+body=$(jq -n \
+  --arg url "$REPLICATED_SITE_URL" \
+  --arg secret "$REPLICATED_WEBHOOK_SECRET" \
+  --arg name "$SUBSCRIPTION_NAME" \
+  '{
+    name: $name,
+    eventConfigs: [
+      { eventType: "customer.created",                   filters: {} },
+      { eventType: "customer.updated",                   filters: {} },
+      { eventType: "customer.license_expiring",          filters: {} },
+      { eventType: "customer.pending_signup",               filters: {} },
+      { eventType: "release.asset_downloaded",               filters: {} },
+      { eventType: "instance.created",                   filters: {} },
+      { eventType: "instance.upgrade_completed",         filters: {} },
+      { eventType: "instance.inactive",                  filters: {} }
+    ],
+    isEnabled: true,
+    webhookUrl: $url,
+    webhookSecret: $secret
+  }')
+
+result=$(replicated api post /v3/notification_subscription -b "$body")
+id=$(echo "$result" | jq -r '.id')
+echo "Created subscription \"${SUBSCRIPTION_NAME}\" (id: ${id})."

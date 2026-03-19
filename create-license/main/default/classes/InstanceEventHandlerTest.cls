@@ -36,7 +36,7 @@ private class InstanceEventHandlerTest {
     }
 
     private static String instanceUpgradedPayload() {
-        return '{"event":"instance.upgraded","data":{' +
+        return '{"event":"instance.upgrade_completed","data":{' +
             '"customer_id":"' + CUSTOMER_ID + '",' +
             '"instance_id":"' + INSTANCE_ID + '",' +
             '"app_version":"2.0.0"' +
@@ -94,7 +94,7 @@ private class InstanceEventHandlerTest {
         insert existing;
 
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('instance.upgraded', instanceUpgradedPayload())
+            buildEvent('instance.upgrade_completed', instanceUpgradedPayload())
         };
 
         Test.startTest();
@@ -229,7 +229,7 @@ private class InstanceEventHandlerTest {
 
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
             buildEvent('instance.created', instanceCreatedPayload()),
-            buildEvent('instance.upgraded', instanceUpgradedPayload())
+            buildEvent('instance.upgrade_completed', instanceUpgradedPayload())
         };
 
         Test.startTest();

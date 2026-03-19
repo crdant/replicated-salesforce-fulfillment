@@ -14,10 +14,10 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
         }
 
         switch on event.Event_Type__c {
-            when 'instance.created', 'instance.upgraded', 'instance.inactive' {
+            when 'instance.created', 'instance.upgrade_completed', 'instance.inactive' {
                 instanceEvents.add(event);
             }
-            when 'customer.license.expiring' {
+            when 'customer.license_expiring' {
                 licenseExpiringEvents.add(event);
             }
             when 'Pending Self-Service Signup' {
