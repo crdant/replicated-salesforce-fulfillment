@@ -1,7 +1,7 @@
 @IsTest
 private class TrialSignupHandlerTest {
 
-    private static String buildPayload(String customerName, String email) {
+    private static Replicated_Webhook__e buildEvent(String customerName, String email) {
         Map<String, Object> data = new Map<String, Object>{
             'customer_name' => customerName,
             'email' => email
@@ -10,15 +10,20 @@ private class TrialSignupHandlerTest {
             'event' => 'Pending Self-Service Signup',
             'data' => data
         };
-        return JSON.serialize(payload);
+        return new Replicated_Webhook__e(
+            Event_Type__c = 'Pending Self-Service Signup',
+            Payload__c = JSON.serialize(payload)
+        );
     }
 
     @IsTest
     static void testCreatesLead() {
-        String payload = buildPayload('Acme Corp', 'trial@acme.com');
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('Acme Corp', 'trial@acme.com')
+        };
 
         Test.startTest();
-        System.enqueueJob(new TrialSignupHandler(payload));
+        System.enqueueJob(new TrialSignupHandler(events));
         Test.stopTest();
 
         List<Lead> leads = [
@@ -42,10 +47,12 @@ private class TrialSignupHandlerTest {
             Status = 'New'
         );
 
-        String payload = buildPayload('Acme Corp', 'dup@acme.com');
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('Acme Corp', 'dup@acme.com')
+        };
 
         Test.startTest();
-        System.enqueueJob(new TrialSignupHandler(payload));
+        System.enqueueJob(new TrialSignupHandler(events));
         Test.stopTest();
 
         List<Lead> leads = [SELECT Id FROM Lead WHERE Email = 'dup@acme.com'];
@@ -54,10 +61,12 @@ private class TrialSignupHandlerTest {
 
     @IsTest
     static void testMissingCustomerNameUsesDefault() {
-        String payload = buildPayload(null, 'noname@test.com');
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent(null, 'noname@test.com')
+        };
 
         Test.startTest();
-        System.enqueueJob(new TrialSignupHandler(payload));
+        System.enqueueJob(new TrialSignupHandler(events));
         Test.stopTest();
 
         List<Lead> leads = [SELECT Id, LastName, Company FROM Lead WHERE Email = 'noname@test.com'];
@@ -68,13 +77,30 @@ private class TrialSignupHandlerTest {
 
     @IsTest
     static void testNullEmailStillCreatesLead() {
-        String payload = buildPayload('No Email Corp', null);
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('No Email Corp', null)
+        };
 
         Test.startTest();
-        System.enqueueJob(new TrialSignupHandler(payload));
+        System.enqueueJob(new TrialSignupHandler(events));
         Test.stopTest();
 
         List<Lead> leads = [SELECT Id, LastName FROM Lead WHERE Company = 'No Email Corp'];
         System.assertEquals(1, leads.size(), 'Should create a Lead even without email');
+    }
+
+    @IsTest
+    static void testBatchDeduplicatesWithinSameBatch() {
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('First Signup', 'batch@test.com'),
+            buildEvent('Second Signup', 'batch@test.com')
+        };
+
+        Test.startTest();
+        System.enqueueJob(new TrialSignupHandler(events));
+        Test.stopTest();
+
+        List<Lead> leads = [SELECT Id FROM Lead WHERE Email = 'batch@test.com'];
+        System.assertEquals(1, leads.size(), 'Should deduplicate within the same batch');
     }
 }

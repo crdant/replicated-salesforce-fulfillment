@@ -1,7 +1,7 @@
 @IsTest
 private class AssetDownloadedHandlerTest {
 
-    private static String buildPayload(String customerId, String customerName, String email) {
+    private static Replicated_Webhook__e buildEvent(String customerId, String customerName, String email) {
         Map<String, Object> data = new Map<String, Object>{
             'customer_id' => customerId,
             'customer_name' => customerName,
@@ -11,7 +11,10 @@ private class AssetDownloadedHandlerTest {
             'event' => 'Release Assets Downloaded',
             'data' => data
         };
-        return JSON.serialize(payload);
+        return new Replicated_Webhook__e(
+            Event_Type__c = 'Release Assets Downloaded',
+            Payload__c = JSON.serialize(payload)
+        );
     }
 
     @IsTest
@@ -24,26 +27,33 @@ private class AssetDownloadedHandlerTest {
             Status = 'New',
             Replicated_Customer_Id__c = 'cust_conv',
             Replicated_License_Type__c = 'trial',
-            Replicated_Channel__c = 'Stable'
+            Replicated_Channel__c = 'Stable',
+            Replicated_License_Expiry__c = Date.valueOf('2026-06-15')
         );
         insert lead;
 
-        String payload = buildPayload('cust_conv', 'Trial Corp', 'trial@corp.com');
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_conv', 'Trial Corp', 'trial@corp.com')
+        };
 
         Test.startTest();
-        System.enqueueJob(new AssetDownloadedHandler(payload));
+        System.enqueueJob(new AssetDownloadedHandler(events));
         Test.stopTest();
 
         // Verify Lead was converted
         Lead converted = [SELECT Id, IsConverted, ConvertedAccountId FROM Lead WHERE Id = :lead.Id];
         System.assert(converted.IsConverted, 'Lead should be converted');
 
-        // Verify Account has Replicated_Customer_Id__c
-        Account acc = [SELECT Id, Replicated_Customer_Id__c, Replicated_License_Type__c, Replicated_Channel__c
-                       FROM Account WHERE Id = :converted.ConvertedAccountId];
+        // Verify Account has all carried-over fields
+        Account acc = [
+            SELECT Id, Replicated_Customer_Id__c, Replicated_License_Type__c,
+                   Replicated_Channel__c, Replicated_License_Expiry__c
+            FROM Account WHERE Id = :converted.ConvertedAccountId
+        ];
         System.assertEquals('cust_conv', acc.Replicated_Customer_Id__c);
         System.assertEquals('trial', acc.Replicated_License_Type__c);
         System.assertEquals('Stable', acc.Replicated_Channel__c);
+        System.assertEquals(Date.valueOf('2026-06-15'), acc.Replicated_License_Expiry__c);
     }
 
     @IsTest
@@ -54,10 +64,12 @@ private class AssetDownloadedHandlerTest {
         );
         insert existing;
 
-        String payload = buildPayload('cust_exists', 'Already Here', 'exists@corp.com');
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_exists', 'Already Here', 'exists@corp.com')
+        };
 
         Test.startTest();
-        System.enqueueJob(new AssetDownloadedHandler(payload));
+        System.enqueueJob(new AssetDownloadedHandler(events));
         Test.stopTest();
 
         // Should still have only one Account
@@ -67,10 +79,12 @@ private class AssetDownloadedHandlerTest {
 
     @IsTest
     static void testCreatesDirectlyWhenNoLead() {
-        String payload = buildPayload('cust_direct', 'Direct Corp', 'direct@corp.com');
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_direct', 'Direct Corp', 'direct@corp.com')
+        };
 
         Test.startTest();
-        System.enqueueJob(new AssetDownloadedHandler(payload));
+        System.enqueueJob(new AssetDownloadedHandler(events));
         Test.stopTest();
 
         List<Account> accounts = [
@@ -116,10 +130,12 @@ private class AssetDownloadedHandlerTest {
         acc.Replicated_Customer_Id__c = 'cust_dup';
         update acc;
 
-        String payload = buildPayload('cust_dup', 'Dup Event Corp', 'dup@event.com');
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_dup', 'Dup Event Corp', 'dup@event.com')
+        };
 
         Test.startTest();
-        System.enqueueJob(new AssetDownloadedHandler(payload));
+        System.enqueueJob(new AssetDownloadedHandler(events));
         Test.stopTest();
 
         // Should still have only one Account -- the handler skipped because Account exists
@@ -129,10 +145,12 @@ private class AssetDownloadedHandlerTest {
 
     @IsTest
     static void testMissingCustomerNameUsesDefault() {
-        String payload = buildPayload('cust_noname', null, 'noname@test.com');
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_noname', null, 'noname@test.com')
+        };
 
         Test.startTest();
-        System.enqueueJob(new AssetDownloadedHandler(payload));
+        System.enqueueJob(new AssetDownloadedHandler(events));
         Test.stopTest();
 
         List<Account> accounts = [

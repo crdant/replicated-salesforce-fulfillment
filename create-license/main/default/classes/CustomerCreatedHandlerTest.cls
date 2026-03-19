@@ -1,7 +1,7 @@
 @IsTest
 private class CustomerCreatedHandlerTest {
 
-    private static String buildPayload(String customerId, String customerName,
+    private static Replicated_Webhook__e buildEvent(String customerId, String customerName,
             String email, String licenseType, String expiresAt, String channelName) {
         Map<String, Object> data = new Map<String, Object>{
             'customer_id' => customerId,
@@ -15,7 +15,10 @@ private class CustomerCreatedHandlerTest {
             'event' => 'customer.created',
             'data' => data
         };
-        return JSON.serialize(payload);
+        return new Replicated_Webhook__e(
+            Event_Type__c = 'customer.created',
+            Payload__c = JSON.serialize(payload)
+        );
     }
 
     @IsTest
@@ -29,13 +32,13 @@ private class CustomerCreatedHandlerTest {
         );
         insert existingLead;
 
-        String payload = buildPayload(
-            'cust_123', 'Acme Corp', 'user@acme.com',
-            'trial', '2026-06-15T00:00:00Z', 'Stable'
-        );
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_123', 'Acme Corp', 'user@acme.com',
+                'trial', '2026-06-15T00:00:00Z', 'Stable')
+        };
 
         Test.startTest();
-        System.enqueueJob(new CustomerCreatedHandler(payload));
+        System.enqueueJob(new CustomerCreatedHandler(events));
         Test.stopTest();
 
         Lead updated = [
@@ -51,13 +54,13 @@ private class CustomerCreatedHandlerTest {
 
     @IsTest
     static void testCreatesLeadWhenNoneExists() {
-        String payload = buildPayload(
-            'cust_456', 'New Corp', 'new@corp.com',
-            'trial', '2026-12-31T00:00:00Z', 'Beta'
-        );
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_456', 'New Corp', 'new@corp.com',
+                'trial', '2026-12-31T00:00:00Z', 'Beta')
+        };
 
         Test.startTest();
-        System.enqueueJob(new CustomerCreatedHandler(payload));
+        System.enqueueJob(new CustomerCreatedHandler(events));
         Test.stopTest();
 
         List<Lead> leads = [
@@ -94,13 +97,13 @@ private class CustomerCreatedHandlerTest {
         lc.setConvertedStatus(convertedStatus.MasterLabel);
         Database.convertLead(lc);
 
-        String payload = buildPayload(
-            'cust_789', 'Converted Corp', 'converted@corp.com',
-            'trial', '2026-06-15T00:00:00Z', 'Stable'
-        );
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_789', 'Converted Corp', 'converted@corp.com',
+                'trial', '2026-06-15T00:00:00Z', 'Stable')
+        };
 
         Test.startTest();
-        System.enqueueJob(new CustomerCreatedHandler(payload));
+        System.enqueueJob(new CustomerCreatedHandler(events));
         Test.stopTest();
 
         // Should create a new Lead since the existing one is converted
@@ -121,13 +124,13 @@ private class CustomerCreatedHandlerTest {
         );
         insert existingLead;
 
-        String payload = buildPayload(
-            'cust_noexp', 'No Expiry', 'noexpiry@test.com',
-            'community', null, 'Stable'
-        );
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('cust_noexp', 'No Expiry', 'noexpiry@test.com',
+                'community', null, 'Stable')
+        };
 
         Test.startTest();
-        System.enqueueJob(new CustomerCreatedHandler(payload));
+        System.enqueueJob(new CustomerCreatedHandler(events));
         Test.stopTest();
 
         Lead updated = [
