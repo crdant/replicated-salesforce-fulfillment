@@ -2,8 +2,12 @@
 set -euo pipefail
 
 # Removes Replicated webhook subscriptions named "Salesforce CRM Sync".
+# Uses curl for DELETE since the replicated CLI lacks a delete subcommand.
+
+: "${REPLICATED_SERVICE_ACCOUNT_TOKEN:?REPLICATED_SERVICE_ACCOUNT_TOKEN is not set}"
 
 SUBSCRIPTION_NAME="Salesforce CRM Sync"
+API_BASE="https://api.replicated.com/vendor"
 
 echo "Checking for webhook subscriptions to remove..."
 response=$(replicated api get /v3/notification_subscriptions)
@@ -18,7 +22,9 @@ fi
 
 echo "$ids" | while read -r id; do
     echo "Deleting subscription ${id}..."
-    replicated api delete "/v3/notification_subscription/${id}"
+    curl -s -X DELETE "${API_BASE}/v3/notification_subscription/${id}" \
+      -H "Authorization: ${REPLICATED_SERVICE_ACCOUNT_TOKEN}" \
+      -H "Content-Type: application/json"
 done
 
 echo "Done."
