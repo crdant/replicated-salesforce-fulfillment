@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -euo pipefail
+
 usage() {
     echo "Usage: $0 -o ORG_ALIAS -t TOKEN"
     echo ""
@@ -6,6 +8,9 @@ usage() {
     echo "with the API token via the Connect REST API."
     exit 1
 }
+
+ORG_ALIAS=""
+TOKEN=""
 
 while getopts ":o:t:" opt; do
   case $opt in
@@ -37,8 +42,9 @@ if [ -z "$TOKEN" ]; then
 fi
 
 # Get the org's instance URL and access token via sf cli
-INSTANCE_URL=$(sf org display --target-org "$ORG_ALIAS" --json | jq -r '.result.instanceUrl')
-ACCESS_TOKEN=$(sf org display --target-org "$ORG_ALIAS" --json | jq -r '.result.accessToken')
+ORG_INFO=$(sf org display --target-org "$ORG_ALIAS" --json)
+INSTANCE_URL=$(echo "$ORG_INFO" | jq -r '.result.instanceUrl')
+ACCESS_TOKEN=$(echo "$ORG_INFO" | jq -r '.result.accessToken')
 
 if [ -z "$INSTANCE_URL" ] || [ "$INSTANCE_URL" = "null" ]; then
     echo "Error: Could not retrieve instance URL for org '$ORG_ALIAS'."
@@ -55,17 +61,20 @@ API_URL="${INSTANCE_URL}/services/data/v61.0/named-credentials/external-credenti
 RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "$API_URL" \
     -H "Authorization: Bearer ${ACCESS_TOKEN}" \
     -H "Content-Type: application/json" \
-    -d "{
-        \"principalName\": \"NamedPrincipal\",
-        \"principalType\": \"NamedPrincipal\",
-        \"authenticationParameters\": [
-            {
-                \"parameterName\": \"ApiToken\",
-                \"parameterValue\": \"${TOKEN}\",
-                \"parameterType\": \"AuthProviderParameter\"
-            }
-        ]
-    }")
+    -d @- <<EOF
+{
+    "principalName": "NamedPrincipal",
+    "principalType": "NamedPrincipal",
+    "authenticationParameters": [
+        {
+            "parameterName": "ApiToken",
+            "parameterValue": "${TOKEN}",
+            "parameterType": "AuthProviderParameter"
+        }
+    ]
+}
+EOF
+)
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
 BODY=$(echo "$RESPONSE" | sed '$d')

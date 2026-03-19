@@ -3,6 +3,9 @@ ORG_ALIAS ?= shortrib
 deploy:
 	sf project deploy start --manifest package.xml -o "$(ORG_ALIAS)"
 
+permissions:
+	sf org assign permset --name Replicated_API_Access --target-org shortrib
+
 retrieve:
 	sf project retrieve start --manifest package.xml -o "$(ORG_ALIAS)"
 

@@ -1,9 +1,5 @@
 public without sharing class ReplicatedPlatform {
 
-    public ReplicatedPlatform() {
-        // No credential needed — Named Credential handles auth
-    }
-
     public ReplicatedCustomer loadCustomer(OrderTerms terms) {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:Replicated_API/vendor/v3/customers/search');

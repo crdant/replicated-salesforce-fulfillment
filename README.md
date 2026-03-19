@@ -127,12 +127,18 @@ fulfillment.
    make deploy
    ```
 4. Set up your products in Salesforce with the required custom fields.
-5. Set the Replicated API token on the Named Credential:
+5. Assign the API access permission set to your user:
+   ```
+   make permissions
+   ```
+6. Set the Replicated API token on the Named Credential:
    ```
    make credentials
    ```
    This requires the `REPLICATED_SERVICE_ACCOUNT_TOKEN` environment variable to be set.
-6. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
+   Note: The credential must be set immediately after deploy — any Order activation
+   before this step will fail.
+7. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
 
 ## Salesforce Site Setup
 
