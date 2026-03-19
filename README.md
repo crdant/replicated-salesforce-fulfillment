@@ -140,6 +140,47 @@ fulfillment.
    before this step will fail.
 7. Test the integration by creating and closing an Opportunity, then activating the resulting Contract and Order.
 
+## Replicated Platform Setup
+
+Configure the Replicated Vendor Portal integration (channels, enterprise
+portal, entitlements, and webhook subscription) after deploying the Salesforce
+metadata and setting up your Salesforce Site.
+
+### Prerequisites
+
+1. [Replicated CLI](https://docs.replicated.com/reference/replicated-cli-installing) (`replicated`) installed and authenticated.
+2. Salesforce metadata deployed (`make deploy`) and credentials configured (`make credentials`).
+3. Salesforce Site created and activated (see [Salesforce Site Setup](#salesforce-site-setup) below).
+
+### Steps
+
+1. Copy `.env.example` to `.env` and fill in your values:
+   ```
+   cp .env.example .env
+   ```
+   `REPLICATED_SITE_URL` requires the Salesforce Site to be deployed and
+   activated first -- use the webhook URL from that step.
+
+2. Source your `.env` (or use [direnv](https://direnv.net/)) and run the
+   orchestrator target:
+   ```
+   make setup-replicated
+   ```
+   This runs `channels`, `enterprise-portal`, `entitlements`, and
+   `webhook-subscription` in sequence.
+
+3. Verify the configuration:
+   ```
+   make verify
+   ```
+   This confirms the Replicated app metadata resolves correctly and the
+   webhook endpoint responds to a test payload.
+
+4. To tear down Replicated webhook resources:
+   ```
+   make replicated-clean
+   ```
+
 ## Salesforce Site Setup
 
 A Salesforce Site is required to expose the webhook endpoint publicly so
@@ -178,7 +219,10 @@ The provided Makefile includes several useful commands:
 - `make deploy`: Deploy the project to your Salesforce org.
 - `make retrieve`: Retrieve the latest metadata from your Salesforce org.
 - `make credentials`: Set the Replicated API token in your org.
+- `make setup-replicated`: Configure all Replicated Platform resources in one step.
+- `make verify`: Verify Replicated app metadata and webhook endpoint.
 - `make clean`: Clean up data in your org (use with caution).
+- `make replicated-clean`: Remove Replicated webhook subscription.
 - `make import`: Import sample data into your org.
 
 ## Troubleshooting
