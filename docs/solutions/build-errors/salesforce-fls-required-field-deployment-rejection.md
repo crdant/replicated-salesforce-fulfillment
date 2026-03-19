@@ -11,6 +11,7 @@ tags:
   - profiles
   - required-field
   - Replicated_Instance__c
+  - Product2
 severity: high
 components:
   - "create-license/main/default/profiles/Admin.profile-meta.xml"
@@ -20,10 +21,14 @@ components:
   - "create-license/main/default/profiles/Custom: Support Profile.profile-meta.xml"
   - "create-license/main/default/profiles/MarketingProfile.profile-meta.xml"
   - "create-license/main/default/objects/Replicated_Instance__c/fields/Instance_Id__c.field-meta.xml"
+  - "create-license/main/default/objects/Replicated_Instance__c/fields/Account__c.field-meta.xml"
+  - "create-license/main/default/objects/Product2/fields/Application__c.field-meta.xml"
 related_issues:
   - "#20"
   - "#25"
   - "#32"
+  - "#37"
+  - "#52"
 ---
 
 # Salesforce Deployment Failure: Explicit FLS on Required Field
@@ -42,7 +47,7 @@ This error has occurred three times in this project:
 
 ## Root Cause
 
-PR #25 (commit `919a948`, "Add field-level security for Replicated_Instance__c fields") added `<fieldPermissions>` blocks for all 10 custom fields on `Replicated_Instance__c` across 6 profiles. The implementation iterated over all fields without checking whether each field was eligible for explicit FLS. `Instance_Id__c` (`<required>true</required>`, Text) was caught first. `Account__c` (`<required>true</required>`, Lookup) was missed initially because documentation incorrectly speculated that required Lookups might be exempt. `Application__c` (`<required>true</required>`, Picklist) on Product2 was caught during the PR #52 deployment.
+PR #25 (commit `919a948`, "Add field-level security for Replicated_Instance__c fields") added `<fieldPermissions>` blocks for all custom fields across 6 profiles without checking whether each field was eligible for explicit FLS. `Instance_Id__c` (`<required>true</required>`, Text) was caught first. `Account__c` (`<required>true</required>`, Lookup) was missed initially because documentation incorrectly speculated that required Lookups might be exempt. `Application__c` (`<required>true</required>`, Picklist) on Product2 was caught during the PR #52 deployment.
 
 Example field definition that triggers the error:
 
@@ -65,11 +70,11 @@ Required fields in Salesforce (those with `<required>true</required>`) follow sp
 
 | Field Type | Required? | Explicit FLS Allowed? | Visibility |
 |------------|-----------|----------------------|------------|
-| Any type (Text, Number, Lookup, etc.) | `true` | No — deployment rejected | Implicit read for all profiles |
+| Any type (Text, Number, Lookup, Picklist, etc.) | `true` | No — deployment rejected | Implicit read for all profiles |
 | Any type | `false` | Yes | Configurable per profile |
 | Formula, Roll-up Summary | any | No | Follows source field visibility |
 
-Required fields get automatic visibility at the platform level regardless of field type. You cannot restrict a required field's visibility through profile-level FLS — Salesforce enforces this during metadata deployment validation. This applies equally to Lookup/relationship fields and non-Lookup fields.
+Required fields get automatic visibility at the platform level regardless of field type. You cannot restrict a required field's visibility through profile-level FLS — Salesforce enforces this during metadata deployment validation.
 
 ### Misconception: Lookup Exception
 
