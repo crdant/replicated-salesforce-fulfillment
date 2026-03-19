@@ -1,9 +1,9 @@
 @IsTest
 private class TrialSignupHandlerTest {
 
-    private static Replicated_Webhook__e buildEvent(String customerName, String email) {
+    private static Replicated_Webhook__e buildEvent(String company, String email) {
         Map<String, Object> data = new Map<String, Object>{
-            'customer_name' => customerName,
+            'company' => company,
             'email' => email
         };
         Map<String, Object> payload = new Map<String, Object>{
@@ -31,7 +31,7 @@ private class TrialSignupHandlerTest {
             FROM Lead WHERE Email = 'trial@acme.com'
         ];
         System.assertEquals(1, leads.size(), 'Should create exactly one Lead');
-        System.assertEquals('Acme Corp', leads[0].LastName);
+        System.assertEquals('Unknown', leads[0].LastName);
         System.assertEquals('Acme Corp', leads[0].Company);
         System.assertEquals('Self-Service Trial', leads[0].LeadSource);
         System.assertEquals('New', leads[0].Status);
