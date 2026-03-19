@@ -75,6 +75,8 @@ All metadata uses API version **61.0**.
 
 - `Product2` — Custom fields map to Replicated app/channel/entitlements
 - `Order.LicenseId__c` — Stores generated Replicated license ID
+- `Order.FulfilledAt__c` — Timestamp of first paid software download confirming order fulfillment
+- `Replicated_Download__c` — Tracks asset downloads from the Replicated Platform (read-only in SF, linked to Account via Account__c)
 - `Replicated_Instance__c` — Tracks Replicated instances (read-only in SF)
 - `Replicated_Webhook__e` — Platform Event for inbound webhook processing
 - `Replicated_Webhook_Secret__mdt` — HMAC signing secret storage
