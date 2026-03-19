@@ -229,16 +229,16 @@ Test cases:
 - [ ] `make deploy` succeeds
 
 ### Phase 3
-- [ ] `EpUserJoinedHandler` converts Lead to ACO on `is_first_user == true`
-- [ ] Handler enriches Account with all Replicated custom fields from Lead
-- [ ] Handler creates ACO directly when no Lead exists
-- [ ] Handler skips when `is_first_user == false`
-- [ ] Handler is idempotent (Account already exists = skip)
-- [ ] Lead lookup falls back to email when `Replicated_Customer_Id__c` not set
-- [ ] SyncGuard applied for all created/updated records
-- [ ] Trigger routes `'customer.ep_user_joined'` to handler
-- [ ] Webhook subscription includes `customer.ep_user_joined`
-- [ ] All tests pass
+- [x] `EpUserJoinedHandler` converts Lead to ACO on `is_first_user == true`
+- [x] Handler enriches Account with all Replicated custom fields from Lead
+- [x] Handler creates ACO directly when no Lead exists
+- [x] Handler skips when `is_first_user == false`
+- [x] Handler is idempotent (Account already exists = skip)
+- [x] Lead lookup falls back to email when `Replicated_Customer_Id__c` not set
+- [x] SyncGuard applied for all created/updated records
+- [x] Trigger routes `'customer.ep_user_joined'` to handler
+- [x] Webhook subscription includes `customer.ep_user_joined`
+- [x] All tests pass
 
 ### Phase 4
 - [ ] `AssetDownloadedHandler` creates `Replicated_Download__c` on every download
