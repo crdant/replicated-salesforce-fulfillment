@@ -1,5 +1,5 @@
 // Runs without sharing: system-to-system webhook handler needs
-// unrestricted access to Account, Lead, Contact, and Opportunity records.
+// unrestricted access to Account and Order records.
 public without sharing class AssetDownloadedHandler implements Queueable {
     private List<Replicated_Webhook__e> events;
 
@@ -27,118 +27,156 @@ public without sharing class AssetDownloadedHandler implements Queueable {
                 continue;
             }
 
-            dataList.add(data);
             String customerId = (String) data.get('customer_id');
-            if (String.isNotBlank(customerId)) {
-                customerIds.add(customerId);
+            if (String.isBlank(customerId)) {
+                continue;
             }
+
+            dataList.add(data);
+            customerIds.add(customerId);
         }
 
-        // Bulk query: existing Accounts by customer ID (for idempotency).
-        Set<String> existingAccountCustomerIds = new Set<String>();
+        if (customerIds.isEmpty()) {
+            return;
+        }
+
+        // Bulk query Accounts by Replicated customer ID.
+        Map<String, Account> accountsByCustomerId = new Map<String, Account>();
         for (Account acc : [
-            SELECT Replicated_Customer_Id__c FROM Account
+            SELECT Id, Replicated_Customer_Id__c
+            FROM Account
             WHERE Replicated_Customer_Id__c IN :customerIds
         ]) {
-            existingAccountCustomerIds.add(acc.Replicated_Customer_Id__c);
+            accountsByCustomerId.put(acc.Replicated_Customer_Id__c, acc);
         }
 
-        // Bulk query: unconverted Leads by customer ID.
-        Map<String, Lead> leadsByCustomerId = new Map<String, Lead>();
-        for (Lead l : [
-            SELECT Id, Replicated_Customer_Id__c, Replicated_License_Type__c,
-                   Replicated_Channel__c, Replicated_License_Expiry__c
-            FROM Lead
-            WHERE Replicated_Customer_Id__c IN :customerIds AND IsConverted = false
-        ]) {
-            leadsByCustomerId.put(l.Replicated_Customer_Id__c, l);
-        }
-
-        // Cache the converted status label (org metadata, never changes at runtime).
-        LeadStatus convertedStatus = [
-            SELECT MasterLabel FROM LeadStatus
-            WHERE IsConverted = true
-            LIMIT 1
-        ];
-
-        // Process each event: convert Lead or create records directly.
-        List<Database.LeadConvert> conversions = new List<Database.LeadConvert>();
-        // Track which Lead maps to which customer ID for post-conversion enrichment.
-        List<Lead> conversionLeads = new List<Lead>();
-        List<String> conversionCustomerIds = new List<String>();
-
-        // Track direct-create data for events with no Lead.
-        List<Map<String, Object>> directCreates = new List<Map<String, Object>>();
+        // Build download records and collect paid event data for order fulfillment.
+        List<Replicated_Download__c> downloads = new List<Replicated_Download__c>();
+        List<Map<String, Object>> paidEvents = new List<Map<String, Object>>();
+        Set<Id> paidAccountIds = new Set<Id>();
+        Set<String> paidAppIds = new Set<String>();
 
         for (Map<String, Object> data : dataList) {
             String customerId = (String) data.get('customer_id');
-
-            // Idempotent: skip if Account already exists for this customer.
-            if (existingAccountCustomerIds.contains(customerId)) {
+            Account acc = accountsByCustomerId.get(customerId);
+            if (acc == null) {
+                System.debug(LoggingLevel.WARN,
+                    'AssetDownloadedHandler: no Account found for customer_id, skipping');
                 continue;
             }
 
-            Lead lead = leadsByCustomerId.get(customerId);
+            DateTime downloadedAt = parseDateTime((String) data.get('downloaded_at'));
 
-            if (lead != null) {
-                Database.LeadConvert lc = new Database.LeadConvert();
-                lc.setLeadId(lead.Id);
-                lc.setConvertedStatus(convertedStatus.MasterLabel);
+            downloads.add(new Replicated_Download__c(
+                Account__c = acc.Id,
+                Asset_Type__c = (String) data.get('asset_type'),
+                Asset_Name__c = (String) data.get('asset_name'),
+                Asset_Version__c = (String) data.get('asset_version'),
+                Channel_Name__c = (String) data.get('channel_name'),
+                License_Type__c = (String) data.get('license_type'),
+                Downloaded_At__c = downloadedAt,
+                Replicated_Customer_Id__c = customerId,
+                App_Name__c = (String) data.get('app_name')
+            ));
 
-                SyncGuard.inboundSyncIds.add(lead.Id);
-                conversions.add(lc);
-                conversionLeads.add(lead);
-                conversionCustomerIds.add(customerId);
-            } else {
-                directCreates.add(data);
+            String licenseType = (String) data.get('license_type');
+            String appId = (String) data.get('app_id');
+            if (licenseType == 'paid' && String.isNotBlank(appId)) {
+                paidEvents.add(data);
+                paidAccountIds.add(acc.Id);
+                paidAppIds.add(appId);
             }
         }
 
-        // Bulk convert Leads.
-        if (!conversions.isEmpty()) {
-            List<Database.LeadConvertResult> results = Database.convertLead(conversions);
-            enrichConvertedAccounts(results, conversionLeads, conversionCustomerIds);
+        // Bulk insert download records.
+        // No SyncGuard needed — no outbound triggers on Replicated_Download__c.
+        if (!downloads.isEmpty()) {
+            insert downloads;
         }
 
-        // Bulk create Account + Contact + Opportunity for events with no Lead.
-        if (!directCreates.isEmpty()) {
-            createAccountsContactsOpportunities(directCreates);
+        // Order fulfillment for paid downloads.
+        if (!paidEvents.isEmpty()) {
+            fulfillOrders(paidEvents, accountsByCustomerId, paidAccountIds, paidAppIds);
         }
     }
 
-    private void enrichConvertedAccounts(
-            List<Database.LeadConvertResult> results,
-            List<Lead> leads,
-            List<String> customerIds) {
-        List<Account> toUpdate = new List<Account>();
+    private void fulfillOrders(
+            List<Map<String, Object>> paidEvents,
+            Map<String, Account> accountsByCustomerId,
+            Set<Id> paidAccountIds,
+            Set<String> paidAppIds) {
 
-        for (Integer i = 0; i < results.size(); i++) {
-            Database.LeadConvertResult result = results[i];
+        // Query unfulfilled licensed Orders for relevant Accounts.
+        List<Order> unfulfilled = [
+            SELECT Id, AccountId, CreatedDate, OpportunityId
+            FROM Order
+            WHERE AccountId IN :paidAccountIds
+              AND LicenseId__c != null
+              AND FulfilledAt__c = null
+            ORDER BY CreatedDate ASC
+        ];
 
-            if (!result.isSuccess()) {
-                System.debug(LoggingLevel.ERROR,
-                    'AssetDownloadedHandler: Lead conversion failed');
+        if (unfulfilled.isEmpty()) {
+            return;
+        }
+
+        // Resolve which app each Order belongs to via OpportunityLineItem → Product2.
+        Set<Id> oppIds = new Set<Id>();
+        for (Order o : unfulfilled) {
+            if (o.OpportunityId != null) {
+                oppIds.add(o.OpportunityId);
+            }
+        }
+
+        Map<Id, String> oppToAppId = new Map<Id, String>();
+        if (!oppIds.isEmpty()) {
+            for (OpportunityLineItem oli : [
+                SELECT OpportunityId, Product2.Application__c
+                FROM OpportunityLineItem
+                WHERE OpportunityId IN :oppIds
+                  AND Product2.Application__c IN :paidAppIds
+                  AND Product2.IsAddOn__c = false
+            ]) {
+                oppToAppId.put(oli.OpportunityId, oli.Product2.Application__c);
+            }
+        }
+
+        // Build map: (AccountId:appId) → oldest unfulfilled Order.
+        Map<String, Order> ordersByKey = new Map<String, Order>();
+        for (Order o : unfulfilled) {
+            String appId = oppToAppId.get(o.OpportunityId);
+            if (appId == null) {
+                continue;
+            }
+            String key = o.AccountId + ':' + appId;
+            if (!ordersByKey.containsKey(key)) {
+                ordersByKey.put(key, o);
+            }
+        }
+
+        // Match paid events to orders and set FulfilledAt__c.
+        List<Order> toUpdate = new List<Order>();
+        Set<Id> updatedOrderIds = new Set<Id>();
+
+        for (Map<String, Object> data : paidEvents) {
+            String customerId = (String) data.get('customer_id');
+            Account acc = accountsByCustomerId.get(customerId);
+            if (acc == null) {
                 continue;
             }
 
-            Lead lead = leads[i];
-            Account acc = new Account(
-                Id = result.getAccountId(),
-                Replicated_Customer_Id__c = customerIds[i]
-            );
-
-            if (String.isNotBlank(lead.Replicated_License_Type__c)) {
-                acc.Replicated_License_Type__c = lead.Replicated_License_Type__c;
-            }
-            if (String.isNotBlank(lead.Replicated_Channel__c)) {
-                acc.Replicated_Channel__c = lead.Replicated_Channel__c;
-            }
-            if (lead.Replicated_License_Expiry__c != null) {
-                acc.Replicated_License_Expiry__c = lead.Replicated_License_Expiry__c;
+            String appId = (String) data.get('app_id');
+            String key = acc.Id + ':' + appId;
+            Order o = ordersByKey.get(key);
+            if (o == null || updatedOrderIds.contains(o.Id)) {
+                continue;
             }
 
-            SyncGuard.inboundSyncIds.add(acc.Id);
-            toUpdate.add(acc);
+            DateTime downloadedAt = parseDateTime((String) data.get('downloaded_at'));
+            o.FulfilledAt__c = downloadedAt;
+            SyncGuard.inboundSyncIds.add(o.Id);
+            toUpdate.add(o);
+            updatedOrderIds.add(o.Id);
         }
 
         if (!toUpdate.isEmpty()) {
@@ -146,63 +184,14 @@ public without sharing class AssetDownloadedHandler implements Queueable {
         }
     }
 
-    private void createAccountsContactsOpportunities(List<Map<String, Object>> dataList) {
-        // Phase 1: Create all Accounts.
-        List<Account> accounts = new List<Account>();
-        for (Map<String, Object> data : dataList) {
-            String customerName = (String) data.get('customer_name');
-            String name = String.isNotBlank(customerName) ? customerName : 'Unknown';
-            accounts.add(new Account(
-                Name = name,
-                Replicated_Customer_Id__c = (String) data.get('customer_id')
-            ));
+    private static DateTime parseDateTime(String dateTimeStr) {
+        if (String.isBlank(dateTimeStr)) {
+            return DateTime.now();
         }
-
-        Savepoint sp = Database.setSavepoint();
         try {
-            insert accounts;
-            for (Account acc : accounts) {
-                SyncGuard.inboundSyncIds.add(acc.Id);
-            }
-
-            // Phase 2: Create Contacts linked to their Accounts.
-            List<Contact> contacts = new List<Contact>();
-            for (Integer i = 0; i < dataList.size(); i++) {
-                Map<String, Object> data = dataList[i];
-                String customerName = (String) data.get('customer_name');
-                String name = String.isNotBlank(customerName) ? customerName : 'Unknown';
-                contacts.add(new Contact(
-                    LastName = name,
-                    Email = (String) data.get('email'),
-                    AccountId = accounts[i].Id
-                ));
-            }
-            insert contacts;
-            for (Contact c : contacts) {
-                SyncGuard.inboundSyncIds.add(c.Id);
-            }
-
-            // Phase 3: Create Opportunities linked to their Accounts.
-            List<Opportunity> opps = new List<Opportunity>();
-            for (Integer i = 0; i < dataList.size(); i++) {
-                Map<String, Object> data = dataList[i];
-                String customerName = (String) data.get('customer_name');
-                String name = String.isNotBlank(customerName) ? customerName : 'Unknown';
-                opps.add(new Opportunity(
-                    Name = name + ' - Trial Conversion',
-                    AccountId = accounts[i].Id,
-                    StageName = 'Qualification',
-                    CloseDate = Date.today().addDays(30)
-                ));
-            }
-            insert opps;
-            for (Opportunity opp : opps) {
-                SyncGuard.inboundSyncIds.add(opp.Id);
-            }
-        } catch (DmlException e) {
-            Database.rollback(sp);
-            System.debug(LoggingLevel.ERROR,
-                'AssetDownloadedHandler: failed to create Account/Contact/Opportunity: ' + e.getMessage());
+            return (DateTime) JSON.deserialize('"' + dateTimeStr + '"', DateTime.class);
+        } catch (Exception e) {
+            return DateTime.now();
         }
     }
 }

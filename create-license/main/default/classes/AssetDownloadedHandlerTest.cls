@@ -1,12 +1,7 @@
 @IsTest
 private class AssetDownloadedHandlerTest {
 
-    private static Replicated_Webhook__e buildEvent(String customerId, String customerName, String email) {
-        Map<String, Object> data = new Map<String, Object>{
-            'customer_id' => customerId,
-            'customer_name' => customerName,
-            'email' => email
-        };
+    private static Replicated_Webhook__e buildEvent(Map<String, Object> data) {
         Map<String, Object> payload = new Map<String, Object>{
             'event' => ReplicatedEventType.RELEASE_ASSET_DOWNLOADED,
             'data' => data
@@ -17,151 +12,209 @@ private class AssetDownloadedHandlerTest {
         );
     }
 
-    @IsTest
-    static void testConvertsLeadToAccountContactOpportunity() {
-        Lead lead = new Lead(
-            LastName = 'Trial Corp',
-            Company = 'Trial Corp',
-            Email = 'trial@corp.com',
-            LeadSource = 'Self-Service Trial',
-            Status = 'New',
-            Replicated_Customer_Id__c = 'cust_conv',
-            Replicated_License_Type__c = 'trial',
-            Replicated_Channel__c = 'Stable',
-            Replicated_License_Expiry__c = Date.valueOf('2026-06-15')
+    private static Map<String, Object> buildDownloadData(
+            String customerId, String licenseType, String appId, String appName) {
+        return new Map<String, Object>{
+            'customer_id' => customerId,
+            'customer_name' => 'Test Customer',
+            'license_type' => licenseType,
+            'app_id' => appId,
+            'app_name' => appName,
+            'asset_type' => 'helm_chart',
+            'asset_name' => 'slackernews',
+            'asset_version' => '1.0.0',
+            'channel_name' => 'Stable',
+            'downloaded_at' => '2026-03-19T14:30:00Z'
+        };
+    }
+
+    private static Account createTestAccount(String customerId, String name) {
+        Account acc = new Account(
+            Name = name,
+            Replicated_Customer_Id__c = customerId
         );
-        insert lead;
-
-        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('cust_conv', 'Trial Corp', 'trial@corp.com')
-        };
-
-        Test.startTest();
-        System.enqueueJob(new AssetDownloadedHandler(events));
-        Test.stopTest();
-
-        // Verify Lead was converted
-        Lead converted = [SELECT Id, IsConverted, ConvertedAccountId FROM Lead WHERE Id = :lead.Id];
-        System.assert(converted.IsConverted, 'Lead should be converted');
-
-        // Verify Account has all carried-over fields
-        Account acc = [
-            SELECT Id, Replicated_Customer_Id__c, Replicated_License_Type__c,
-                   Replicated_Channel__c, Replicated_License_Expiry__c
-            FROM Account WHERE Id = :converted.ConvertedAccountId
-        ];
-        System.assertEquals('cust_conv', acc.Replicated_Customer_Id__c);
-        System.assertEquals('trial', acc.Replicated_License_Type__c);
-        System.assertEquals('Stable', acc.Replicated_Channel__c);
-        System.assertEquals(Date.valueOf('2026-06-15'), acc.Replicated_License_Expiry__c);
+        insert acc;
+        return acc;
     }
 
-    @IsTest
-    static void testIdempotentSkipsWhenAccountExists() {
-        Account existing = new Account(
-            Name = 'Already Here',
-            Replicated_Customer_Id__c = 'cust_exists'
+    // Creates a full Order chain: Product2 → PricebookEntry → Opportunity →
+    // OpportunityLineItem → Order with LicenseId__c.
+    private static Order createOrderWithProduct(Account acc, String appId, String licenseId) {
+        Product2 product = new Product2(
+            Name = 'Test Product',
+            Application__c = appId,
+            IsActive = true,
+            IsAddOn__c = false
         );
-        insert existing;
+        insert product;
 
-        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('cust_exists', 'Already Here', 'exists@corp.com')
-        };
-
-        Test.startTest();
-        System.enqueueJob(new AssetDownloadedHandler(events));
-        Test.stopTest();
-
-        // Should still have only one Account
-        List<Account> accounts = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = 'cust_exists'];
-        System.assertEquals(1, accounts.size(), 'Should not create a duplicate Account');
-    }
-
-    @IsTest
-    static void testCreatesDirectlyWhenNoLead() {
-        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('cust_direct', 'Direct Corp', 'direct@corp.com')
-        };
-
-        Test.startTest();
-        System.enqueueJob(new AssetDownloadedHandler(events));
-        Test.stopTest();
-
-        List<Account> accounts = [
-            SELECT Id, Name, Replicated_Customer_Id__c
-            FROM Account WHERE Replicated_Customer_Id__c = 'cust_direct'
-        ];
-        System.assertEquals(1, accounts.size(), 'Should create an Account directly');
-        System.assertEquals('Direct Corp', accounts[0].Name);
-
-        List<Contact> contacts = [SELECT Id, Email FROM Contact WHERE AccountId = :accounts[0].Id];
-        System.assertEquals(1, contacts.size(), 'Should create a Contact');
-        System.assertEquals('direct@corp.com', contacts[0].Email);
-
-        List<Opportunity> opps = [SELECT Id, Name, StageName FROM Opportunity WHERE AccountId = :accounts[0].Id];
-        System.assertEquals(1, opps.size(), 'Should create an Opportunity');
-        System.assertEquals('Qualification', opps[0].StageName);
-    }
-
-    @IsTest
-    static void testDuplicateEventAfterConversion() {
-        // Simulate a Lead that was already converted and an Account that already exists
-        Lead lead = new Lead(
-            LastName = 'Dup Event Corp',
-            Company = 'Dup Event Corp',
-            Email = 'dup@event.com',
-            Status = 'New',
-            Replicated_Customer_Id__c = 'cust_dup'
+        Id stdPricebookId = Test.getStandardPricebookId();
+        PricebookEntry pbe = new PricebookEntry(
+            Pricebook2Id = stdPricebookId,
+            Product2Id = product.Id,
+            UnitPrice = 1000,
+            IsActive = true
         );
-        insert lead;
+        insert pbe;
 
-        // Convert the Lead manually to simulate prior handler execution
-        Database.LeadConvert lc = new Database.LeadConvert();
-        lc.setLeadId(lead.Id);
-        LeadStatus convertedStatus = [
-            SELECT MasterLabel FROM LeadStatus
-            WHERE IsConverted = true LIMIT 1
-        ];
-        lc.setConvertedStatus(convertedStatus.MasterLabel);
-        Database.LeadConvertResult lcr = Database.convertLead(lc);
+        Opportunity opp = new Opportunity(
+            Name = acc.Name + ' - Deal',
+            AccountId = acc.Id,
+            StageName = 'Closed Won',
+            CloseDate = Date.today(),
+            Pricebook2Id = stdPricebookId
+        );
+        insert opp;
 
-        // Set Replicated_Customer_Id__c on the Account
-        Account acc = [SELECT Id FROM Account WHERE Id = :lcr.getAccountId()];
-        acc.Replicated_Customer_Id__c = 'cust_dup';
-        update acc;
+        OpportunityLineItem oli = new OpportunityLineItem(
+            OpportunityId = opp.Id,
+            PricebookEntryId = pbe.Id,
+            Quantity = 1,
+            UnitPrice = 1000
+        );
+        insert oli;
+
+        Order ord = new Order(
+            AccountId = acc.Id,
+            OpportunityId = opp.Id,
+            EffectiveDate = Date.today(),
+            Status = 'Draft',
+            Pricebook2Id = stdPricebookId,
+            LicenseId__c = licenseId
+        );
+        insert ord;
+        return ord;
+    }
+
+    @IsTest
+    static void testTrialDownloadCreatesRecord() {
+        Account acc = createTestAccount('cust_trial', 'Trial Corp');
 
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('cust_dup', 'Dup Event Corp', 'dup@event.com')
+            buildEvent(buildDownloadData('cust_trial', 'trial', 'app_123', 'SlackerNews'))
         };
 
         Test.startTest();
         System.enqueueJob(new AssetDownloadedHandler(events));
         Test.stopTest();
 
-        // Should still have only one Account -- the handler skipped because Account exists
-        List<Account> accounts = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = 'cust_dup'];
-        System.assertEquals(1, accounts.size(), 'Duplicate event should not create another Account');
+        List<Replicated_Download__c> downloads = [
+            SELECT Account__c, Asset_Type__c, Asset_Name__c, Asset_Version__c,
+                   Channel_Name__c, License_Type__c, Downloaded_At__c,
+                   Replicated_Customer_Id__c, App_Name__c
+            FROM Replicated_Download__c
+            WHERE Account__c = :acc.Id
+        ];
+        System.assertEquals(1, downloads.size(), 'Should create one download record');
+
+        Replicated_Download__c dl = downloads[0];
+        System.assertEquals('helm_chart', dl.Asset_Type__c);
+        System.assertEquals('slackernews', dl.Asset_Name__c);
+        System.assertEquals('1.0.0', dl.Asset_Version__c);
+        System.assertEquals('Stable', dl.Channel_Name__c);
+        System.assertEquals('trial', dl.License_Type__c);
+        System.assertEquals('cust_trial', dl.Replicated_Customer_Id__c);
+        System.assertEquals('SlackerNews', dl.App_Name__c);
+        System.assertNotEquals(null, dl.Downloaded_At__c);
     }
 
     @IsTest
-    static void testMissingCustomerNameUsesDefault() {
+    static void testPaidDownloadFulfillsOrder() {
+        Account acc = createTestAccount('cust_paid', 'Paid Corp');
+        Order ord = createOrderWithProduct(acc, 'app_paid', 'lic_001');
+
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
-            buildEvent('cust_noname', null, 'noname@test.com')
+            buildEvent(buildDownloadData('cust_paid', 'paid', 'app_paid', 'SlackerNews'))
         };
 
         Test.startTest();
         System.enqueueJob(new AssetDownloadedHandler(events));
         Test.stopTest();
 
-        List<Account> accounts = [
-            SELECT Id, Name FROM Account WHERE Replicated_Customer_Id__c = 'cust_noname'
+        // Download record created.
+        List<Replicated_Download__c> downloads = [
+            SELECT Id FROM Replicated_Download__c WHERE Account__c = :acc.Id
         ];
-        System.assertEquals(1, accounts.size(), 'Should create Account with default name');
-        System.assertEquals('Unknown', accounts[0].Name);
+        System.assertEquals(1, downloads.size(), 'Should create download record');
+
+        // Order fulfilled.
+        Order updated = [SELECT FulfilledAt__c FROM Order WHERE Id = :ord.Id];
+        System.assertNotEquals(null, updated.FulfilledAt__c, 'FulfilledAt__c should be set');
+
+        // SyncGuard applied.
+        System.assert(SyncGuard.inboundSyncIds.contains(ord.Id),
+            'SyncGuard should contain the fulfilled Order Id');
     }
 
     @IsTest
-    static void testMalformedPayloadSkipped() {
+    static void testPaidDownloadOrderAlreadyFulfilled() {
+        Account acc = createTestAccount('cust_already', 'Already Corp');
+        Order ord = createOrderWithProduct(acc, 'app_already', 'lic_002');
+
+        // Pre-set FulfilledAt__c.
+        ord.FulfilledAt__c = DateTime.newInstance(2026, 1, 1, 0, 0, 0);
+        update ord;
+
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent(buildDownloadData('cust_already', 'paid', 'app_already', 'SlackerNews'))
+        };
+
+        Test.startTest();
+        System.enqueueJob(new AssetDownloadedHandler(events));
+        Test.stopTest();
+
+        // Download still created.
+        List<Replicated_Download__c> downloads = [
+            SELECT Id FROM Replicated_Download__c WHERE Account__c = :acc.Id
+        ];
+        System.assertEquals(1, downloads.size(), 'Should still create download record');
+
+        // FulfilledAt__c unchanged (original value preserved).
+        Order unchanged = [SELECT FulfilledAt__c FROM Order WHERE Id = :ord.Id];
+        System.assertEquals(
+            DateTime.newInstance(2026, 1, 1, 0, 0, 0),
+            unchanged.FulfilledAt__c,
+            'FulfilledAt__c should remain unchanged'
+        );
+    }
+
+    @IsTest
+    static void testPaidDownloadNoOrder() {
+        Account acc = createTestAccount('cust_noorder', 'No Order Corp');
+        // No Order created for this Account.
+
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent(buildDownloadData('cust_noorder', 'paid', 'app_noorder', 'SlackerNews'))
+        };
+
+        Test.startTest();
+        System.enqueueJob(new AssetDownloadedHandler(events));
+        Test.stopTest();
+
+        // Download still created even though no Order to fulfill.
+        List<Replicated_Download__c> downloads = [
+            SELECT Id FROM Replicated_Download__c WHERE Account__c = :acc.Id
+        ];
+        System.assertEquals(1, downloads.size(), 'Should create download record regardless of Order');
+    }
+
+    @IsTest
+    static void testNoAccountSkips() {
+        // No Account exists for this customer_id.
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent(buildDownloadData('cust_unknown', 'trial', 'app_123', 'SlackerNews'))
+        };
+
+        Test.startTest();
+        System.enqueueJob(new AssetDownloadedHandler(events));
+        Test.stopTest();
+
+        List<Replicated_Download__c> downloads = [SELECT Id FROM Replicated_Download__c];
+        System.assertEquals(0, downloads.size(), 'Should not create records when no Account found');
+    }
+
+    @IsTest
+    static void testMalformedPayload() {
         Replicated_Webhook__e event = new Replicated_Webhook__e(
             Event_Type__c = ReplicatedEventType.RELEASE_ASSET_DOWNLOADED,
             Payload__c = 'not valid json'
@@ -171,7 +224,60 @@ private class AssetDownloadedHandlerTest {
         System.enqueueJob(new AssetDownloadedHandler(new List<Replicated_Webhook__e>{ event }));
         Test.stopTest();
 
-        List<Account> accounts = [SELECT Id FROM Account];
-        System.assertEquals(0, accounts.size(), 'Should not create records from malformed payload');
+        List<Replicated_Download__c> downloads = [SELECT Id FROM Replicated_Download__c];
+        System.assertEquals(0, downloads.size(), 'Should not create records from malformed payload');
+    }
+
+    @IsTest
+    static void testBulkDownloads() {
+        // Create 200 Accounts with downloads.
+        List<Account> accounts = new List<Account>();
+        for (Integer i = 0; i < 200; i++) {
+            accounts.add(new Account(
+                Name = 'Bulk Corp ' + i,
+                Replicated_Customer_Id__c = 'cust_bulk_' + i
+            ));
+        }
+        insert accounts;
+
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>();
+        for (Integer i = 0; i < 200; i++) {
+            events.add(buildEvent(buildDownloadData(
+                'cust_bulk_' + i, 'trial', 'app_bulk', 'BulkApp'
+            )));
+        }
+
+        Test.startTest();
+        System.enqueueJob(new AssetDownloadedHandler(events));
+        Test.stopTest();
+
+        Integer downloadCount = [SELECT COUNT() FROM Replicated_Download__c];
+        System.assertEquals(200, downloadCount, 'Should create 200 download records');
+    }
+
+    @IsTest
+    static void testMultipleOrdersMatchesCorrectApp() {
+        Account acc = createTestAccount('cust_multi', 'Multi App Corp');
+
+        // Create two Orders for different apps on the same Account.
+        Order orderAppA = createOrderWithProduct(acc, 'app_aaa', 'lic_aaa');
+        Order orderAppB = createOrderWithProduct(acc, 'app_bbb', 'lic_bbb');
+
+        // Download for app_bbb — should fulfill orderAppB, not orderAppA.
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent(buildDownloadData('cust_multi', 'paid', 'app_bbb', 'AppB'))
+        };
+
+        Test.startTest();
+        System.enqueueJob(new AssetDownloadedHandler(events));
+        Test.stopTest();
+
+        Order updatedA = [SELECT FulfilledAt__c FROM Order WHERE Id = :orderAppA.Id];
+        System.assertEquals(null, updatedA.FulfilledAt__c,
+            'Order for app_aaa should NOT be fulfilled');
+
+        Order updatedB = [SELECT FulfilledAt__c FROM Order WHERE Id = :orderAppB.Id];
+        System.assertNotEquals(null, updatedB.FulfilledAt__c,
+            'Order for app_bbb should be fulfilled');
     }
 }

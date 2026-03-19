@@ -241,14 +241,14 @@ Test cases:
 - [x] All tests pass
 
 ### Phase 4
-- [ ] `AssetDownloadedHandler` creates `Replicated_Download__c` on every download
-- [ ] Handler sets `FulfilledAt__c` on unfulfilled Order when `license_type == 'paid'`
-- [ ] Order matching uses `app_id` to select correct Order
-- [ ] Handler skips gracefully when no Account found
-- [ ] No Lead conversion or ACO creation logic remains
-- [ ] SyncGuard applied for Order updates
-- [ ] All tests pass
-- [ ] All existing tests continue to pass
+- [x] `AssetDownloadedHandler` creates `Replicated_Download__c` on every download
+- [x] Handler sets `FulfilledAt__c` on unfulfilled Order when `license_type == 'paid'`
+- [x] Order matching uses `app_id` to select correct Order
+- [x] Handler skips gracefully when no Account found
+- [x] No Lead conversion or ACO creation logic remains
+- [x] SyncGuard applied for Order updates
+- [x] All tests pass
+- [x] All existing tests continue to pass
 
 ## Dependencies & Risks
 
