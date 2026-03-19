@@ -5,36 +5,13 @@ set -euo pipefail
 # env vars. Outputs JSON to stdout:
 #   {"app_name": "...", "app_id": "...", "channel_id": "..."}
 
-if [ -z "${REPLICATED_APP:-}" ]; then
-  echo "Error: REPLICATED_APP environment variable is not set." >&2
-  exit 1
-fi
+: "${REPLICATED_APP:?REPLICATED_APP is not set}"
+: "${REPLICATED_CHANNEL:?REPLICATED_CHANNEL is not set}"
 
-if [ -z "${REPLICATED_CHANNEL:-}" ]; then
-  echo "Error: REPLICATED_CHANNEL environment variable is not set." >&2
-  exit 1
-fi
-
-apps=$(replicated app ls --output json)
-
-app_match=$(echo "$apps" | jq --arg app "$REPLICATED_APP" \
-  '[.[] | select(.app.slug == $app)] | first // empty')
-
-if [ -z "$app_match" ]; then
-  echo "Error: App '${REPLICATED_APP}' not found." >&2
-  exit 1
-fi
-
-channel_id=$(echo "$app_match" | jq -r --arg channel "$REPLICATED_CHANNEL" \
-  '.channels[] | select(.channelSlug == $channel) | .id')
-
-if [ -z "$channel_id" ]; then
-  echo "Error: Channel '${REPLICATED_CHANNEL}' not found for app '${REPLICATED_APP}'." >&2
-  exit 1
-fi
-
-echo "$app_match" | jq --arg channel_id "$channel_id" '{
-  app_name: .app.name,
-  app_id: .app.id,
-  channel_id: $channel_id
-}'
+replicated app ls --output json | jq -e --arg app "$REPLICATED_APP" --arg channel "$REPLICATED_CHANNEL" \
+  '[.[] | select(.app.slug == $app)] | first
+   | {
+       app_name: .app.name,
+       app_id: .app.id,
+       channel_id: ([.channels[] | select(.channelSlug == $channel) | .id] | first)
+     }'

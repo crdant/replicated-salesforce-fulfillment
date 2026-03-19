@@ -27,6 +27,12 @@ make import      # Import sample data
 make clean       # Clean up org data (use with caution)
 ```
 
+### Utility Scripts
+
+```bash
+hack/resolve-app-metadata  # Resolve app_name, app_id, channel_id from REPLICATED_APP and REPLICATED_CHANNEL env vars (JSON to stdout)
+```
+
 ### Salesforce API Version
 
 All metadata uses API version **61.0**.
