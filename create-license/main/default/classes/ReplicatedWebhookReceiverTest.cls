@@ -37,7 +37,9 @@ private class ReplicatedWebhookReceiverTest {
     @IsTest
     static void testValidSignature() {
         setupTestSecret();
-        String body = validPayload(ReplicatedEventType.CUSTOMER_CREATED);
+        // Use a non-handler event type so the trigger routes to 'when else'
+        // and no Queueable handler runs — this test only validates HMAC verification.
+        String body = validPayload('test.signature_check');
 
         RestContext.request = buildRequest(body, generateSignature(body));
         RestContext.response = new RestResponse();
