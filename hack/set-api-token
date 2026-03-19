@@ -56,22 +56,22 @@ if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
     exit 1
 fi
 
-API_URL="${INSTANCE_URL}/services/data/v61.0/named-credentials/external-credentials/Replicated_Vendor_Portal/principals/NamedPrincipal"
+API_URL="${INSTANCE_URL}/services/data/v61.0/named-credentials/credential"
 
-RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "$API_URL" \
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$API_URL" \
     -H "Authorization: Bearer ${ACCESS_TOKEN}" \
     -H "Content-Type: application/json" \
     -d @- <<EOF
 {
+    "externalCredential": "Replicated_Vendor_Portal",
     "principalName": "NamedPrincipal",
     "principalType": "NamedPrincipal",
-    "authenticationParameters": [
-        {
-            "parameterName": "ApiToken",
-            "parameterValue": "${TOKEN}",
-            "parameterType": "AuthProviderParameter"
+    "credentials": {
+        "ApiToken": {
+            "value": "${TOKEN}",
+            "encrypted": true
         }
-    ]
+    }
 }
 EOF
 )

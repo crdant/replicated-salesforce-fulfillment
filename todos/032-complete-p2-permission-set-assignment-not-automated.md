@@ -1,7 +1,7 @@
 ---
 status: complete
 priority: p2
-issue_id: "012"
+issue_id: "032"
 tags:
   - code-review
   - agent-accessibility

@@ -4,6 +4,7 @@ public without sharing class ReplicatedPlatform {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:Replicated_API/vendor/v3/customers/search');
         req.setMethod('POST');
+        req.setHeader('Authorization', '{!$Credential.Replicated_Vendor_Portal.ApiToken}');
         req.setHeader('accept', 'application/json');
         req.setHeader('content-type', 'application/json');
 
@@ -40,6 +41,7 @@ public without sharing class ReplicatedPlatform {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:Replicated_API/vendor/v3/customer');
         req.setMethod('POST');
+        req.setHeader('Authorization', '{!$Credential.Replicated_Vendor_Portal.ApiToken}');
         req.setHeader('Content-Type', 'application/json');
         req.setBody(customer.createRequest());
 
@@ -65,6 +67,7 @@ public without sharing class ReplicatedPlatform {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:Replicated_API/vendor/v3/customer');
         req.setMethod('PUT');
+        req.setHeader('Authorization', '{!$Credential.Replicated_Vendor_Portal.ApiToken}');
         req.setHeader('Content-Type', 'application/json');
         req.setBody(customer.createRequest());
 
@@ -86,6 +89,7 @@ public without sharing class ReplicatedPlatform {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:Replicated_API/vendor/v3/app/' + appId + '/customer/' + customerId + '/license-download');
         req.setMethod('GET');
+        req.setHeader('Authorization', '{!$Credential.Replicated_Vendor_Portal.ApiToken}');
 
         Http http = new Http();
         HttpResponse res = http.send(req);
@@ -101,6 +105,7 @@ public without sharing class ReplicatedPlatform {
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:Replicated_API/vendor/v3/app/' + appId + '/enterprise-portal/customer-user');
         req.setMethod('POST');
+        req.setHeader('Authorization', '{!$Credential.Replicated_Vendor_Portal.ApiToken}');
         req.setHeader('Content-Type', 'application/json');
 
         Map<String, String> body = new Map<String, String>();

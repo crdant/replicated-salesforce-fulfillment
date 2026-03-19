@@ -1,10 +1,10 @@
 ORG_ALIAS ?= shortrib
 
 deploy:
-	sf project deploy start --manifest package.xml -o "$(ORG_ALIAS)"
+	sf project deploy start --manifest package.xml --post-destructive-changes create-license/main/default/destructiveChangesPost.xml -o "$(ORG_ALIAS)"
 
 permissions:
-	sf org assign permset --name Replicated_API_Access --target-org shortrib
+	sf org assign permset --name Replicated_API_Access --target-org "$(ORG_ALIAS)"
 
 retrieve:
 	sf project retrieve start --manifest package.xml -o "$(ORG_ALIAS)"
