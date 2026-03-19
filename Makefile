@@ -18,6 +18,9 @@ webhook-secret:
 channels:
 	hack/create-channel -a "$${REPLICATED_APP}" -n "$${REPLICATED_CHANNEL}"
 
+enterprise-portal:
+	hack/setup-enterprise-portal
+
 clean:
 	hack/clean -o "$(ORG_ALIAS)"
 

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Configures the Replicated Enterprise Portal and trial signup settings
+# for the app identified by REPLICATED_APP and REPLICATED_CHANNEL env vars.
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+
+metadata=$("$SCRIPT_DIR/resolve-app-metadata")
+app_id=$(echo "$metadata" | jq -r '.app_id')
+channel_id=$(echo "$metadata" | jq -r '.channel_id')
+
+expiration_days="${REPLICATED_TRIAL_EXPIRATION_DAYS:-30}"
+
+echo "Enabling Enterprise Portal..."
+replicated api put "/v3/app/$app_id/enterprise-portal/status" -b '{"status": "always"}'
+
+echo "Enabling trial signup..."
+replicated api put "/v3/app/$app_id/trial-signup" -b '{"enabled": true}'
+
+echo "Configuring trial signup settings..."
+replicated api put "/v3/app/$app_id/trial-signup-settings" -b "$(jq -n \
+  --arg channel_id "$channel_id" \
+  --argjson expiration_days "$expiration_days" \
+  '{
+    defaultChannelId: $channel_id,
+    licenseType: "trial",
+    expirationDays: $expiration_days,
+    helmInstallEnabled: true,
+    embeddedClusterEnabled: false,
+    isHelmAirgapEnabled: false,
+    supportBundleUploadEnabled: true
+  }')"
