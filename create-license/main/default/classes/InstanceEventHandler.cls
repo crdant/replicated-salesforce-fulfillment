@@ -63,7 +63,7 @@ public without sharing class InstanceEventHandler implements Queueable {
                 instancesByExternalId.put(instanceId, instance);
             }
 
-            if (event.Event_Type__c == 'instance.created') {
+            if (event.Event_Type__c == ReplicatedEventType.INSTANCE_CREATED) {
                 instance.Status__c = resolveStatus((String) data.get('status'));
                 instance.App_Version__c = (String) data.get('app_version');
                 instance.Cloud_Provider__c = (String) data.get('cloud_provider');
@@ -71,10 +71,10 @@ public without sharing class InstanceEventHandler implements Queueable {
                 instance.First_Check_In__c = parseDateTime((String) data.get('created_at'));
                 instance.Last_Check_In__c = parseDateTime((String) data.get('last_check_in'));
                 instance.Name = buildInstanceName(instanceId, (String) data.get('customer_name'));
-            } else if (event.Event_Type__c == 'instance.upgrade_completed') {
+            } else if (event.Event_Type__c == ReplicatedEventType.INSTANCE_UPGRADE_COMPLETED) {
                 instance.App_Version__c = (String) data.get('app_version');
                 instance.Last_Check_In__c = DateTime.now();
-            } else if (event.Event_Type__c == 'instance.inactive') {
+            } else if (event.Event_Type__c == ReplicatedEventType.INSTANCE_INACTIVE) {
                 instance.Status__c = 'Unavailable';
                 instance.Last_Check_In__c = parseDateTime((String) data.get('last_check_in'));
             }

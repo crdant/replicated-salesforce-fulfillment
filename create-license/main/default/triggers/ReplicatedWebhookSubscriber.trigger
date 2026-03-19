@@ -13,6 +13,7 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
             continue;
         }
 
+        // Canonical keys defined in ReplicatedEventType.cls (switch on requires literals).
         switch on event.Event_Type__c {
             when 'instance.created', 'instance.upgrade_completed', 'instance.inactive' {
                 instanceEvents.add(event);

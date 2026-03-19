@@ -14,7 +14,7 @@ private class LicenseExpiringHandlerTest {
 
     private static Replicated_Webhook__e buildEvent(String payload) {
         return new Replicated_Webhook__e(
-            Event_Type__c = 'customer.license_expiring',
+            Event_Type__c = ReplicatedEventType.CUSTOMER_LICENSE_EXPIRING,
             Customer_Id__c = CUSTOMER_ID,
             Payload__c = payload
         );
@@ -89,7 +89,7 @@ private class LicenseExpiringHandlerTest {
         System.enqueueJob(new LicenseExpiringHandler(
             new List<Replicated_Webhook__e>{
                 new Replicated_Webhook__e(
-                    Event_Type__c = 'customer.license_expiring',
+                    Event_Type__c = ReplicatedEventType.CUSTOMER_LICENSE_EXPIRING,
                     Customer_Id__c = unknownCustomerId,
                     Payload__c = payload
                 )

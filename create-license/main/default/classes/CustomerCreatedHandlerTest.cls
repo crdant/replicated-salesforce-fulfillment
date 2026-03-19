@@ -12,11 +12,11 @@ private class CustomerCreatedHandlerTest {
             'channel_name' => channelName
         };
         Map<String, Object> payload = new Map<String, Object>{
-            'event' => 'customer.created',
+            'event' => ReplicatedEventType.CUSTOMER_CREATED,
             'data' => data
         };
         return new Replicated_Webhook__e(
-            Event_Type__c = 'customer.created',
+            Event_Type__c = ReplicatedEventType.CUSTOMER_CREATED,
             Payload__c = JSON.serialize(payload)
         );
     }
@@ -144,7 +144,7 @@ private class CustomerCreatedHandlerTest {
     @IsTest
     static void testMalformedPayloadSkipped() {
         Replicated_Webhook__e event = new Replicated_Webhook__e(
-            Event_Type__c = 'customer.created',
+            Event_Type__c = ReplicatedEventType.CUSTOMER_CREATED,
             Payload__c = 'not valid json'
         );
 
