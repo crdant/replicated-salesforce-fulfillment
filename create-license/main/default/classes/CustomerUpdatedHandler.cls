@@ -27,7 +27,7 @@ public without sharing class CustomerUpdatedHandler implements Queueable {
                 continue;
             }
 
-            String customerId = (String) data.get('customer_id');
+            String customerId = WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id'));
             if (String.isBlank(customerId)) {
                 continue;
             }
@@ -53,7 +53,7 @@ public without sharing class CustomerUpdatedHandler implements Queueable {
         List<Account> toUpdate = new List<Account>();
 
         for (Map<String, Object> data : dataList) {
-            String customerId = (String) data.get('customer_id');
+            String customerId = WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id'));
             Account acc = accountsByCustomerId.get(customerId);
             if (acc == null) {
                 System.debug(LoggingLevel.WARN,

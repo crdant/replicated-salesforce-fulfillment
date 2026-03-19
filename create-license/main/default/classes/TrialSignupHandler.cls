@@ -51,10 +51,10 @@ public without sharing class TrialSignupHandler implements Queueable {
                 continue;
             }
 
-            String customerName = (String) data.get('customer_name');
+            String company = (String) data.get('company');
             toInsert.add(new Lead(
-                LastName = String.isNotBlank(customerName) ? customerName : 'Unknown',
-                Company = String.isNotBlank(customerName) ? customerName : 'Unknown',
+                LastName = 'Unknown',
+                Company = String.isNotBlank(company) ? company : 'Unknown',
                 Email = email,
                 LeadSource = 'Self-Service Trial',
                 Status = 'New'

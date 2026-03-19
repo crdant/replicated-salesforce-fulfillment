@@ -96,10 +96,18 @@ public without sharing class OrderTerms {
 
     public Id accountId() {
         Opportunity opp = [SELECT AccountId
-                           FROM Opportunity 
+                           FROM Opportunity
                            WHERE Id = :opportunityId
                            LIMIT 1];
-        return opp.accountId; 
+        return opp.accountId;
+    }
+
+    public String replicatedCustomerId() {
+        Opportunity opp = [SELECT Account.Replicated_Customer_Id__c
+                           FROM Opportunity
+                           WHERE Id = :opportunityId
+                           LIMIT 1];
+        return opp.Account.Replicated_Customer_Id__c;
     }
 
     public String customerEmail() {

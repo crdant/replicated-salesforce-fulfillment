@@ -35,7 +35,7 @@ public without sharing class EpUserJoinedHandler implements Queueable {
                 continue;
             }
 
-            String customerId = (String) data.get('customer_id');
+            String customerId = WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id'));
             if (String.isBlank(customerId)) {
                 System.debug(LoggingLevel.WARN, 'EpUserJoinedHandler: blank customer_id, skipping');
                 continue;
@@ -100,7 +100,7 @@ public without sharing class EpUserJoinedHandler implements Queueable {
         List<Map<String, Object>> directCreates = new List<Map<String, Object>>();
 
         for (Map<String, Object> data : dataList) {
-            String customerId = (String) data.get('customer_id');
+            String customerId = WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id'));
             String joinedEmail = (String) data.get('joined_email');
 
             // Idempotent: skip if Account already exists.
@@ -134,14 +134,29 @@ public without sharing class EpUserJoinedHandler implements Queueable {
         }
 
         // Bulk convert Leads.
+        List<OpportunityContactRole> contactRoles = new List<OpportunityContactRole>();
         if (!conversions.isEmpty()) {
             List<Database.LeadConvertResult> results = Database.convertLead(conversions);
             enrichConvertedAccounts(results, conversionLeads, conversionCustomerIds);
+
+            for (Database.LeadConvertResult result : results) {
+                if (result.isSuccess()) {
+                    contactRoles.add(new OpportunityContactRole(
+                        OpportunityId = result.getOpportunityId(),
+                        ContactId = result.getContactId(),
+                        Role = 'Technical Buyer'
+                    ));
+                }
+            }
         }
 
         // Bulk create Account + Contact + Opportunity for events with no Lead.
         if (!directCreates.isEmpty()) {
-            createAccountsContactsOpportunities(directCreates);
+            contactRoles.addAll(createAccountsContactsOpportunities(directCreates));
+        }
+
+        if (!contactRoles.isEmpty()) {
+            insert contactRoles;
         }
     }
 
@@ -191,7 +206,7 @@ public without sharing class EpUserJoinedHandler implements Queueable {
         }
     }
 
-    private void createAccountsContactsOpportunities(List<Map<String, Object>> dataList) {
+    private List<OpportunityContactRole> createAccountsContactsOpportunities(List<Map<String, Object>> dataList) {
         // Phase 1: Create all Accounts.
         List<Account> accounts = new List<Account>();
         for (Map<String, Object> data : dataList) {
@@ -199,7 +214,7 @@ public without sharing class EpUserJoinedHandler implements Queueable {
             String name = String.isNotBlank(customerName) ? customerName : 'Unknown';
             accounts.add(new Account(
                 Name = name,
-                Replicated_Customer_Id__c = (String) data.get('customer_id')
+                Replicated_Customer_Id__c = WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id'))
             ));
         }
 
@@ -244,10 +259,21 @@ public without sharing class EpUserJoinedHandler implements Queueable {
             for (Opportunity opp : opps) {
                 SyncGuard.inboundSyncIds.add(opp.Id);
             }
+
+            List<OpportunityContactRole> roles = new List<OpportunityContactRole>();
+            for (Integer i = 0; i < opps.size(); i++) {
+                roles.add(new OpportunityContactRole(
+                    OpportunityId = opps[i].Id,
+                    ContactId = contacts[i].Id,
+                    Role = 'Technical Buyer'
+                ));
+            }
+            return roles;
         } catch (DmlException e) {
             Database.rollback(sp);
             System.debug(LoggingLevel.ERROR,
                 'EpUserJoinedHandler: failed to create Account/Contact/Opportunity: ' + e.getMessage());
+            return new List<OpportunityContactRole>();
         }
     }
 }

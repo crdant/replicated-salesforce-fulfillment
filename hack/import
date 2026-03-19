@@ -46,10 +46,10 @@ app_id=$(echo "${metadata}" | jq -r .app_id)
 channel_id=$(echo "${metadata}" | jq -r .channel_id)
 
 # customize the product
-jq --arg name $app_name --arg app_id $app_id --arg channel_id $channel_id '{ "records": [ ( (.records[]) | .Name = (.Name | gsub("\\$APPLICATION"; $name)) | .Application__c = $app_id | .ReleaseChannel__c = $channel_id ) ] }' ${DATA_DIR}/Product2.json | sponge ${DATA_DIR}/Product2.json
+jq --arg name "$app_name" --arg app_id "$app_id" --arg channel_id "$channel_id" '{ "records": [ ( (.records[]) | .Name = (.Name | gsub("\\$APPLICATION"; $name)) | .Application__c = $app_id | .ReleaseChannel__c = $channel_id ) ] }' "${DATA_DIR}/Product2.json" | sponge "${DATA_DIR}/Product2.json"
 
 # customize the opportunities
-jq --arg name $app_name '{ "records": [ ( (.records[]) | .Name = (.Name | gsub("\\$APPLICATION"; $name))) ] }' ${DATA_DIR}/Opportunity.json | sponge ${DATA_DIR}/Opportunity.json
+jq --arg name "$app_name" '{ "records": [ ( (.records[]) | .Name = (.Name | gsub("\\$APPLICATION"; $name))) ] }' "${DATA_DIR}/Opportunity.json" | sponge "${DATA_DIR}/Opportunity.json"
 
 # import the graph of objects
 sf data import tree --plan ${DATA_DIR}/demo-data-plan.json -o ${ORG_ALIAS}

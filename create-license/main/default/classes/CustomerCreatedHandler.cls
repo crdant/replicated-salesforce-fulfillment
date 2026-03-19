@@ -48,12 +48,18 @@ public without sharing class CustomerCreatedHandler implements Queueable {
         List<Lead> toInsert = new List<Lead>();
 
         for (Map<String, Object> data : dataList) {
-            String customerId = (String) data.get('customer_id');
+            String customerId = WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id'));
             String customerName = (String) data.get('customer_name');
             String email = (String) data.get('email');
             String licenseType = (String) data.get('license_type');
             String expiresAt = (String) data.get('expires_at');
             String channelName = (String) data.get('channel_name');
+
+            // Trial customers are handled by TrialSignupHandler via
+            // customer.pending_signup — skip them here to avoid duplicates.
+            if ('trial'.equalsIgnoreCase(licenseType)) {
+                continue;
+            }
 
             Lead lead = String.isNotBlank(email) ? leadsByEmail.get(email) : null;
 

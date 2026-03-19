@@ -70,4 +70,8 @@ delete entitlementsToDelete;
 
 List<Account> accountsToDelete = [SELECT Id FROM Account];
 delete accountsToDelete;
+
+List<Lead> leadsToDelete = [SELECT Id FROM Lead];
+delete leadsToDelete;
+
 CLEANUP_CODE

@@ -34,6 +34,24 @@ public without sharing class ReplicatedPlatform {
         return null ;
     }
 
+    public ReplicatedCustomer loadCustomerById(String customerId) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('callout:Replicated_API/vendor/v3/customer/' + customerId);
+        req.setMethod('GET');
+        req.setHeader('Authorization', '{!$Credential.Replicated_Vendor_Portal.ApiToken}');
+        req.setHeader('accept', 'application/json');
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        if (res.getStatusCode() == 200) {
+            Map<String, Object> resultMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+            String customerJson = JSON.serialize(resultMap.get('customer'));
+            return ReplicatedCustomer.create(customerJson);
+        }
+        return null;
+    }
+
     public ReplicatedCustomer createLicense(OrderTerms terms) {
         ReplicatedCustomer customer = new ReplicatedCustomer(terms);
         System.debug('Creating license for customer: ' + customer.name);
@@ -65,7 +83,7 @@ public without sharing class ReplicatedPlatform {
         System.debug('Updating license for customer: ' + customer.name);
 
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('callout:Replicated_API/vendor/v3/customer');
+        req.setEndpoint('callout:Replicated_API/vendor/v3/customer/' + customer.id);
         req.setMethod('PUT');
         req.setHeader('Authorization', '{!$Credential.Replicated_Vendor_Portal.ApiToken}');
         req.setHeader('Content-Type', 'application/json');
@@ -117,10 +135,10 @@ public without sharing class ReplicatedPlatform {
         HttpResponse res = http.send(req);
 
         if (res.getStatusCode() != 200 && res.getStatusCode() != 201) {
-            throw new ReplicatedAPIException(
-                'Failed to invite user to Enterprise Portal. Status: ' + res.getStatusCode()
-                + ' ' + res.getStatus()
-            );
+            // Non-fatal: user may already be invited (e.g., trial signup).
+            System.debug(LoggingLevel.WARN,
+                'ReplicatedPlatform: portal invite returned ' + res.getStatusCode()
+                + ' ' + res.getStatus() + ' — user may already have access');
         }
     }
 
