@@ -62,7 +62,7 @@ public without sharing class CustomerCreatedHandler implements Queueable {
                 lead.Replicated_Customer_Id__c = customerId;
                 lead.Replicated_License_Type__c = licenseType;
                 lead.Replicated_Channel__c = channelName;
-                lead.Replicated_License_Expiry__c = parseDate(expiresAt);
+                lead.Replicated_License_Expiry__c = WebhookPayloadUtils.parseDate(expiresAt);
 
                 SyncGuard.inboundSyncIds.add(lead.Id);
                 toUpdate.add(lead);
@@ -77,7 +77,7 @@ public without sharing class CustomerCreatedHandler implements Queueable {
                     Replicated_Customer_Id__c = customerId,
                     Replicated_License_Type__c = licenseType,
                     Replicated_Channel__c = channelName,
-                    Replicated_License_Expiry__c = parseDate(expiresAt)
+                    Replicated_License_Expiry__c = WebhookPayloadUtils.parseDate(expiresAt)
                 ));
             }
         }
@@ -98,22 +98,6 @@ public without sharing class CustomerCreatedHandler implements Queueable {
                         results[i].getErrors()[0].getMessage());
                 }
             }
-        }
-    }
-
-    private static Date parseDate(String dateString) {
-        if (String.isBlank(dateString)) {
-            return null;
-        }
-        try {
-            if (dateString.contains('T')) {
-                dateString = dateString.substringBefore('T');
-            }
-            return Date.valueOf(dateString);
-        } catch (Exception e) {
-            System.debug(LoggingLevel.WARN,
-                'CustomerCreatedHandler: failed to parse date: ' + dateString);
-            return null;
         }
     }
 }

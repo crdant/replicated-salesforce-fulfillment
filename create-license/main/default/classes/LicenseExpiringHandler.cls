@@ -46,7 +46,7 @@ public without sharing class LicenseExpiringHandler implements Queueable {
 
             String customerName = (String) data.get('customer_name');
             String expiresAt = (String) data.get('expires_at');
-            Date expiryDate = parseDate(expiresAt);
+            Date expiryDate = WebhookPayloadUtils.parseDate(expiresAt);
 
             String subject = 'Trial license expiring for ' +
                 (String.isNotBlank(customerName) ? customerName : acc.Name);
@@ -76,23 +76,6 @@ public without sharing class LicenseExpiringHandler implements Queueable {
 
         if (!tasks.isEmpty()) {
             insert tasks;
-        }
-    }
-
-    private static Date parseDate(String dateString) {
-        if (String.isBlank(dateString)) {
-            return null;
-        }
-        try {
-            // Handle ISO datetime strings by extracting the date portion
-            if (dateString.contains('T')) {
-                dateString = dateString.substringBefore('T');
-            }
-            return Date.valueOf(dateString);
-        } catch (Exception e) {
-            System.debug(LoggingLevel.WARN,
-                'LicenseExpiringHandler: failed to parse date: ' + dateString);
-            return null;
         }
     }
 }

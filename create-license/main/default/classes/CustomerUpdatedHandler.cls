@@ -43,8 +43,7 @@ public without sharing class CustomerUpdatedHandler implements Queueable {
         // Single SOQL: find all Accounts by Replicated customer ID.
         Map<String, Account> accountsByCustomerId = new Map<String, Account>();
         for (Account acc : [
-            SELECT Id, Name, Replicated_Customer_Id__c, Replicated_License_Type__c,
-                   Replicated_Channel__c, Replicated_License_Expiry__c
+            SELECT Id, Replicated_Customer_Id__c
             FROM Account
             WHERE Replicated_Customer_Id__c IN :customerIds
         ]) {
@@ -58,7 +57,7 @@ public without sharing class CustomerUpdatedHandler implements Queueable {
             Account acc = accountsByCustomerId.get(customerId);
             if (acc == null) {
                 System.debug(LoggingLevel.WARN,
-                    'CustomerUpdatedHandler: no Account for customer_id ' + customerId);
+                    'CustomerUpdatedHandler: no matching Account found, skipping event');
                 continue;
             }
 
@@ -82,16 +81,20 @@ public without sharing class CustomerUpdatedHandler implements Queueable {
 
             // Sync channel_name only if channel_changed is true.
             Boolean channelChanged = (Boolean) data.get('channel_changed');
-            if (channelChanged == true) {
-                acc.Replicated_Channel__c = (String) data.get('channel_name');
+            String channelName = (String) data.get('channel_name');
+            if (channelChanged == true && channelName != null) {
+                acc.Replicated_Channel__c = channelName;
                 changed = true;
             }
 
             // Sync expires_at only if expiration_changed is true.
             Boolean expirationChanged = (Boolean) data.get('expiration_changed');
             if (expirationChanged == true) {
-                acc.Replicated_License_Expiry__c = parseDate((String) data.get('expires_at'));
-                changed = true;
+                Date expiryDate = WebhookPayloadUtils.parseDate((String) data.get('expires_at'));
+                if (expiryDate != null) {
+                    acc.Replicated_License_Expiry__c = expiryDate;
+                    changed = true;
+                }
             }
 
             if (changed) {
@@ -101,23 +104,14 @@ public without sharing class CustomerUpdatedHandler implements Queueable {
         }
 
         if (!toUpdate.isEmpty()) {
-            update toUpdate;
+            List<Database.SaveResult> results = Database.update(toUpdate, false);
+            for (Database.SaveResult result : results) {
+                if (!result.isSuccess()) {
+                    System.debug(LoggingLevel.WARN,
+                        'CustomerUpdatedHandler: partial update failure, skipping record');
+                }
+            }
         }
     }
 
-    private static Date parseDate(String dateString) {
-        if (String.isBlank(dateString)) {
-            return null;
-        }
-        try {
-            if (dateString.contains('T')) {
-                dateString = dateString.substringBefore('T');
-            }
-            return Date.valueOf(dateString);
-        } catch (Exception e) {
-            System.debug(LoggingLevel.WARN,
-                'CustomerUpdatedHandler: failed to parse date: ' + dateString);
-            return null;
-        }
-    }
 }
