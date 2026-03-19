@@ -1,4 +1,4 @@
-public class OrderTerms {
+public without sharing class OrderTerms {
     private Id opportunityId ;
 
     private Date closeDate;

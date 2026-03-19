@@ -1,4 +1,4 @@
-public class ReplicatedCustomer {
+public without sharing class ReplicatedCustomer {
     public String id { get; set; }
     public String name { get; set; }
     public String customId { get; set; }

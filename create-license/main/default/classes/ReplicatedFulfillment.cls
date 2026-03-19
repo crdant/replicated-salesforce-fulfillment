@@ -1,4 +1,4 @@
-public class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts {
+public without sharing class ReplicatedFulfillment implements Queueable, Database.AllowsCallouts {
     private OrderTerms terms;
 
     private ReplicatedPlatform platform;
