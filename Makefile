@@ -22,10 +22,7 @@ enterprise-portal:
 	hack/setup-enterprise-portal
 
 entitlements:
-	@app_id=$$(hack/resolve-app-metadata | jq -r .app_id); \
-	replicated api post "/v3/app/$$app_id/license-field" \
-	  -b '{"name":"member_count_max","title":"Maximum Members","type":"Integer","default":"100"}' \
-	  2>/dev/null || echo "Field member_count_max already exists"
+	hack/create-license-field
 
 clean:
 	hack/clean -o "$(ORG_ALIAS)"
