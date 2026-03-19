@@ -37,8 +37,12 @@ if [ -z "$CHANNEL" ]; then
 fi
 
 # Check if the channel already exists
-id=$(replicated channel ls --app "$APP" --output json | \
-  jq -r --arg ch "$CHANNEL" '.[] | select(.channelSlug == $ch) | .id')
+json=$(replicated channel ls --app "$APP" --output json 2>/dev/null) || {
+    echo "Error: Failed to list channels for app '$APP'. Verify the app slug is correct." >&2
+    exit 1
+}
+
+id=$(echo "$json" | jq -r --arg ch "$CHANNEL" '.[] | select(.channelSlug == $ch) | .id')
 
 if [ -n "$id" ]; then
     echo "$id"
