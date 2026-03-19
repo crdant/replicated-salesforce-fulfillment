@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+usage() {
+    echo "Usage: $0 -a APP_SLUG -n CHANNEL_NAME"
+    echo ""
+    echo "Creates a Replicated release channel if it does not already exist."
+    echo "Outputs the channel ID on success."
+    exit 1
+}
+
+while getopts ":a:n:" opt; do
+  case $opt in
+    a)
+      APP=$OPTARG
+      ;;
+    n)
+      CHANNEL=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      usage
+      ;;
+  esac
+done
+
+if [ -z "$APP" ]; then
+    echo "Error: App slug is required."
+    usage
+fi
+
+if [ -z "$CHANNEL" ]; then
+    echo "Error: Channel name is required."
+    usage
+fi
+
+# Check if the channel already exists
+id=$(replicated channel ls --app "$APP" --output json | \
+  jq -r --arg ch "$CHANNEL" '.[] | select(.channelSlug == $ch) | .id')
+
+if [ -n "$id" ]; then
+    echo "$id"
+else
+    replicated channel create --app "$APP" --name "$CHANNEL" \
+      --description "Self-service trial channel" --output json | jq -r '.id'
+fi
