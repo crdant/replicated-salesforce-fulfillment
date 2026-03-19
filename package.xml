@@ -33,6 +33,7 @@
         <name>ApexTrigger</name>
     </types>
     <types>
+        <members>Replicated_Download__c</members>
         <members>Replicated_Instance__c</members>
         <members>Replicated_Webhook__e</members>
         <members>Replicated_Webhook_Secret__mdt</members>
@@ -53,6 +54,7 @@
         <members>Lead.Replicated_Channel__c</members>
         <members>Lead.Replicated_License_Expiry__c</members>
         <members>Lead.Replicated_License_Type__c</members>
+        <members>Order.FulfilledAt__c</members>
         <members>Order.LicenseId__c</members>
         <members>Product2.Application__c</members>
         <members>Product2.IsAddOn__c</members>
@@ -62,6 +64,15 @@
         <members>Product2.IsSnapshotSupported__c</members>
         <members>Product2.IsSupportBundleUploadEnabled__c</members>
         <members>Product2.ReleaseChannel__c</members>
+        <members>Replicated_Download__c.Account__c</members>
+        <members>Replicated_Download__c.App_Name__c</members>
+        <members>Replicated_Download__c.Asset_Name__c</members>
+        <members>Replicated_Download__c.Asset_Type__c</members>
+        <members>Replicated_Download__c.Asset_Version__c</members>
+        <members>Replicated_Download__c.Channel_Name__c</members>
+        <members>Replicated_Download__c.Downloaded_At__c</members>
+        <members>Replicated_Download__c.License_Type__c</members>
+        <members>Replicated_Download__c.Replicated_Customer_Id__c</members>
         <members>Replicated_Instance__c.Account__c</members>
         <members>Replicated_Instance__c.App_Version__c</members>
         <members>Replicated_Instance__c.Cloud_Provider__c</members>
