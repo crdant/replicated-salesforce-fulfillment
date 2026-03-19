@@ -48,5 +48,5 @@ if [ -n "$id" ]; then
     echo "$id"
 else
     replicated channel create --app "$APP" --name "$CHANNEL" \
-      --description "Self-service trial channel" --output json | jq -r '.id'
+      --description "Self-service trial channel" --output json 2>/dev/null | jq -r '.[0].id'
 fi
