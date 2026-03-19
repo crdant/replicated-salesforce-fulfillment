@@ -13,6 +13,14 @@ private class InstanceEventHandlerTest {
         insert acc;
     }
 
+    private static Replicated_Webhook__e buildEvent(String eventType, String payload) {
+        return new Replicated_Webhook__e(
+            Event_Type__c = eventType,
+            Customer_Id__c = CUSTOMER_ID,
+            Payload__c = payload
+        );
+    }
+
     private static String instanceCreatedPayload() {
         return '{"event":"instance.created","data":{' +
             '"customer_id":"' + CUSTOMER_ID + '",' +
@@ -45,10 +53,12 @@ private class InstanceEventHandlerTest {
 
     @IsTest
     static void testInstanceCreated() {
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('instance.created', instanceCreatedPayload())
+        };
+
         Test.startTest();
-        System.enqueueJob(new InstanceEventHandler(
-            'instance.created', CUSTOMER_ID, instanceCreatedPayload()
-        ));
+        System.enqueueJob(new InstanceEventHandler(events));
         Test.stopTest();
 
         Replicated_Instance__c inst = [
@@ -83,10 +93,12 @@ private class InstanceEventHandlerTest {
         );
         insert existing;
 
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('instance.upgraded', instanceUpgradedPayload())
+        };
+
         Test.startTest();
-        System.enqueueJob(new InstanceEventHandler(
-            'instance.upgraded', CUSTOMER_ID, instanceUpgradedPayload()
-        ));
+        System.enqueueJob(new InstanceEventHandler(events));
         Test.stopTest();
 
         Replicated_Instance__c inst = [
@@ -113,10 +125,12 @@ private class InstanceEventHandlerTest {
         );
         insert existing;
 
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('instance.inactive', instanceInactivePayload())
+        };
+
         Test.startTest();
-        System.enqueueJob(new InstanceEventHandler(
-            'instance.inactive', CUSTOMER_ID, instanceInactivePayload()
-        ));
+        System.enqueueJob(new InstanceEventHandler(events));
         Test.stopTest();
 
         Replicated_Instance__c inst = [
@@ -139,10 +153,16 @@ private class InstanceEventHandlerTest {
             '"app_version":"1.0.0"' +
             '}}';
 
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            new Replicated_Webhook__e(
+                Event_Type__c = 'instance.created',
+                Customer_Id__c = unknownCustomerId,
+                Payload__c = payload
+            )
+        };
+
         Test.startTest();
-        System.enqueueJob(new InstanceEventHandler(
-            'instance.created', unknownCustomerId, payload
-        ));
+        System.enqueueJob(new InstanceEventHandler(events));
         Test.stopTest();
 
         List<Replicated_Instance__c> instances = [
@@ -159,10 +179,12 @@ private class InstanceEventHandlerTest {
             '"status":"ready"' +
             '}}';
 
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('instance.created', payload)
+        };
+
         Test.startTest();
-        System.enqueueJob(new InstanceEventHandler(
-            'instance.created', CUSTOMER_ID, payload
-        ));
+        System.enqueueJob(new InstanceEventHandler(events));
         Test.stopTest();
 
         List<Replicated_Instance__c> instances = [
@@ -175,10 +197,12 @@ private class InstanceEventHandlerTest {
     static void testMissingDataInPayload() {
         String payload = '{"event":"instance.created"}';
 
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('instance.created', payload)
+        };
+
         Test.startTest();
-        System.enqueueJob(new InstanceEventHandler(
-            'instance.created', CUSTOMER_ID, payload
-        ));
+        System.enqueueJob(new InstanceEventHandler(events));
         Test.stopTest();
 
         List<Replicated_Instance__c> instances = [
@@ -200,23 +224,26 @@ private class InstanceEventHandlerTest {
     }
 
     @IsTest
-    static void testSyncGuardIsSet() {
+    static void testBulkInstanceEvents() {
         Account acc = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = :CUSTOMER_ID LIMIT 1];
 
+        List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
+            buildEvent('instance.created', instanceCreatedPayload()),
+            buildEvent('instance.upgraded', instanceUpgradedPayload())
+        };
+
         Test.startTest();
-        System.enqueueJob(new InstanceEventHandler(
-            'instance.created', CUSTOMER_ID, instanceCreatedPayload()
-        ));
+        System.enqueueJob(new InstanceEventHandler(events));
         Test.stopTest();
 
-        // Verify a record was created (SyncGuard runs within the Queueable context,
-        // so we verify the DML succeeded which proves SyncGuard didn't block it)
         Replicated_Instance__c inst = [
-            SELECT Id, Account__c
+            SELECT Instance_Id__c, App_Version__c
             FROM Replicated_Instance__c
             WHERE Instance_Id__c = :INSTANCE_ID
             LIMIT 1
         ];
-        System.assertEquals(acc.Id, inst.Account__c, 'Instance should be linked to the Account');
+
+        // The upgraded event runs after created, so version should be the upgraded value
+        System.assertEquals('2.0.0', inst.App_Version__c, 'App version should reflect the last event processed');
     }
 }

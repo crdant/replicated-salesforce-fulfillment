@@ -12,6 +12,14 @@ private class LicenseExpiringHandlerTest {
         insert acc;
     }
 
+    private static Replicated_Webhook__e buildEvent(String payload) {
+        return new Replicated_Webhook__e(
+            Event_Type__c = 'customer.license.expiring',
+            Customer_Id__c = CUSTOMER_ID,
+            Payload__c = payload
+        );
+    }
+
     private static String expiringPayload(String expiresAt) {
         return '{"event":"customer.license.expiring","data":{' +
             '"customer_id":"' + CUSTOMER_ID + '",' +
@@ -25,7 +33,9 @@ private class LicenseExpiringHandlerTest {
         String payload = expiringPayload('2026-04-15');
 
         Test.startTest();
-        System.enqueueJob(new LicenseExpiringHandler(CUSTOMER_ID, payload));
+        System.enqueueJob(new LicenseExpiringHandler(
+            new List<Replicated_Webhook__e>{ buildEvent(payload) }
+        ));
         Test.stopTest();
 
         Account acc = [SELECT Id, OwnerId FROM Account WHERE Replicated_Customer_Id__c = :CUSTOMER_ID LIMIT 1];
@@ -54,7 +64,9 @@ private class LicenseExpiringHandlerTest {
         String payload = expiringPayload('2026-05-20T23:59:59Z');
 
         Test.startTest();
-        System.enqueueJob(new LicenseExpiringHandler(CUSTOMER_ID, payload));
+        System.enqueueJob(new LicenseExpiringHandler(
+            new List<Replicated_Webhook__e>{ buildEvent(payload) }
+        ));
         Test.stopTest();
 
         Account acc = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = :CUSTOMER_ID LIMIT 1];
@@ -74,7 +86,15 @@ private class LicenseExpiringHandlerTest {
             '}}';
 
         Test.startTest();
-        System.enqueueJob(new LicenseExpiringHandler(unknownCustomerId, payload));
+        System.enqueueJob(new LicenseExpiringHandler(
+            new List<Replicated_Webhook__e>{
+                new Replicated_Webhook__e(
+                    Event_Type__c = 'customer.license.expiring',
+                    Customer_Id__c = unknownCustomerId,
+                    Payload__c = payload
+                )
+            }
+        ));
         Test.stopTest();
 
         List<Task> tasks = [SELECT Id FROM Task WHERE Subject LIKE '%Unknown Corp%'];
@@ -89,7 +109,9 @@ private class LicenseExpiringHandlerTest {
             '}}';
 
         Test.startTest();
-        System.enqueueJob(new LicenseExpiringHandler(CUSTOMER_ID, payload));
+        System.enqueueJob(new LicenseExpiringHandler(
+            new List<Replicated_Webhook__e>{ buildEvent(payload) }
+        ));
         Test.stopTest();
 
         Account acc = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = :CUSTOMER_ID LIMIT 1];
@@ -107,7 +129,9 @@ private class LicenseExpiringHandlerTest {
             '}}';
 
         Test.startTest();
-        System.enqueueJob(new LicenseExpiringHandler(CUSTOMER_ID, payload));
+        System.enqueueJob(new LicenseExpiringHandler(
+            new List<Replicated_Webhook__e>{ buildEvent(payload) }
+        ));
         Test.stopTest();
 
         Account acc = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = :CUSTOMER_ID LIMIT 1];
@@ -124,7 +148,9 @@ private class LicenseExpiringHandlerTest {
         String payload = '{"event":"customer.license.expiring"}';
 
         Test.startTest();
-        System.enqueueJob(new LicenseExpiringHandler(CUSTOMER_ID, payload));
+        System.enqueueJob(new LicenseExpiringHandler(
+            new List<Replicated_Webhook__e>{ buildEvent(payload) }
+        ));
         Test.stopTest();
 
         Account acc = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = :CUSTOMER_ID LIMIT 1];
@@ -138,7 +164,9 @@ private class LicenseExpiringHandlerTest {
         String payload = expiringPayload('2025-01-01');
 
         Test.startTest();
-        System.enqueueJob(new LicenseExpiringHandler(CUSTOMER_ID, payload));
+        System.enqueueJob(new LicenseExpiringHandler(
+            new List<Replicated_Webhook__e>{ buildEvent(payload) }
+        ));
         Test.stopTest();
 
         Account acc = [SELECT Id FROM Account WHERE Replicated_Customer_Id__c = :CUSTOMER_ID LIMIT 1];

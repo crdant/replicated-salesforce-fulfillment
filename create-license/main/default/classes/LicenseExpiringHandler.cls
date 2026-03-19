@@ -1,67 +1,82 @@
-public class LicenseExpiringHandler implements Queueable {
-    private String customerId;
-    private String payload;
+// Runs without sharing: system-to-system webhook handler needs
+// unrestricted access to Account records and Task creation.
+public without sharing class LicenseExpiringHandler implements Queueable {
+    private List<Replicated_Webhook__e> events;
 
-    public LicenseExpiringHandler(String customerId, String payload) {
-        this.customerId = customerId;
-        this.payload = payload;
+    public LicenseExpiringHandler(List<Replicated_Webhook__e> events) {
+        this.events = events;
     }
 
     public void execute(QueueableContext context) {
-        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(this.payload);
-        Map<String, Object> data = (Map<String, Object>) parsed.get('data');
-
-        if (data == null) {
-            System.debug(LoggingLevel.WARN, 'LicenseExpiringHandler: missing data in payload');
-            return;
-        }
-
-        List<Account> accounts = [
-            SELECT Id, OwnerId, Name FROM Account
-            WHERE Replicated_Customer_Id__c = :this.customerId
-            LIMIT 1
-        ];
-
-        if (accounts.isEmpty()) {
-            System.debug(LoggingLevel.WARN,
-                'LicenseExpiringHandler: no Account found for Replicated customer ' + this.customerId);
-            return;
-        }
-
-        Account acc = accounts[0];
-        SyncGuard.inboundSyncIds.add(acc.Id);
-
-        String customerName = (String) data.get('customer_name');
-        String expiresAt = (String) data.get('expires_at');
-        Date expiryDate = parseDate(expiresAt);
-
-        String subject = 'Trial license expiring for ' +
-            (String.isNotBlank(customerName) ? customerName : acc.Name);
-
-        String description = 'License expires on ' +
-            (String.isNotBlank(expiresAt) ? expiresAt : 'unknown date') +
-            '. Follow up to discuss conversion.';
-
-        Date activityDate;
-        if (expiryDate != null) {
-            activityDate = expiryDate.addDays(-7);
-            if (activityDate < Date.today()) {
-                activityDate = Date.today();
+        // Collect all customer IDs to query Accounts in bulk.
+        Set<String> customerIds = new Set<String>();
+        for (Replicated_Webhook__e event : this.events) {
+            if (String.isNotBlank(event.Customer_Id__c)) {
+                customerIds.add(event.Customer_Id__c);
             }
-        } else {
-            activityDate = Date.today();
         }
 
-        Task followUp = new Task(
-            WhatId = acc.Id,
-            OwnerId = acc.OwnerId,
-            Subject = subject,
-            Description = description,
-            ActivityDate = activityDate,
-            Status = 'Not Started',
-            Priority = 'High'
-        );
-        insert followUp;
+        Map<String, Account> accountsByCustomerId = new Map<String, Account>();
+        for (Account acc : [
+            SELECT Id, OwnerId, Name, Replicated_Customer_Id__c FROM Account
+            WHERE Replicated_Customer_Id__c IN :customerIds
+        ]) {
+            accountsByCustomerId.put(acc.Replicated_Customer_Id__c, acc);
+        }
+
+        List<Task> tasks = new List<Task>();
+
+        for (Replicated_Webhook__e event : this.events) {
+            Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(event.Payload__c);
+            Map<String, Object> data = (Map<String, Object>) parsed.get('data');
+
+            if (data == null) {
+                System.debug(LoggingLevel.WARN, 'LicenseExpiringHandler: missing data in payload');
+                continue;
+            }
+
+            Account acc = accountsByCustomerId.get(event.Customer_Id__c);
+            if (acc == null) {
+                System.debug(LoggingLevel.WARN,
+                    'LicenseExpiringHandler: no Account found for Replicated customer');
+                continue;
+            }
+
+            SyncGuard.inboundSyncIds.add(acc.Id);
+
+            String customerName = (String) data.get('customer_name');
+            String expiresAt = (String) data.get('expires_at');
+            Date expiryDate = parseDate(expiresAt);
+
+            String subject = 'Trial license expiring for ' +
+                (String.isNotBlank(customerName) ? customerName : acc.Name);
+
+            String description = 'License expires on ' +
+                (String.isNotBlank(expiresAt) ? expiresAt : 'unknown date') +
+                '. Follow up to discuss conversion.';
+
+            Date activityDate = Date.today();
+            if (expiryDate != null) {
+                Date sevenDaysBefore = expiryDate.addDays(-7);
+                if (sevenDaysBefore > Date.today()) {
+                    activityDate = sevenDaysBefore;
+                }
+            }
+
+            tasks.add(new Task(
+                WhatId = acc.Id,
+                OwnerId = acc.OwnerId,
+                Subject = subject,
+                Description = description,
+                ActivityDate = activityDate,
+                Status = 'Not Started',
+                Priority = 'High'
+            ));
+        }
+
+        if (!tasks.isEmpty()) {
+            insert tasks;
+        }
     }
 
     private static Date parseDate(String dateString) {

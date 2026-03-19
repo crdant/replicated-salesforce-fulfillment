@@ -5,6 +5,7 @@ private class ReplicatedWebhookReceiverTest {
 
     private static void setupTestSecret() {
         ReplicatedWebhookReceiver.testSecret = TEST_SECRET;
+        ReplicatedWebhookReceiver.testSecretOverridden = true;
     }
 
     private static String generateSignature(String body) {
@@ -147,7 +148,8 @@ private class ReplicatedWebhookReceiverTest {
 
     @IsTest
     static void testMissingWebhookSecret() {
-        // Do NOT call setupTestSecret() -- simulates missing metadata record
+        // Override the secret lookup without setting a value — simulates missing metadata record
+        ReplicatedWebhookReceiver.testSecretOverridden = true;
         String body = validPayload('customer.created');
 
         RestContext.request = buildRequest(body, 'sha256=anything');
