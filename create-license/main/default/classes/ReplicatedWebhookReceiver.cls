@@ -23,7 +23,7 @@ global class ReplicatedWebhookReceiver {
             return;
         }
 
-        String signature = req.headers.get('X-Replicated-Signature');
+        String signature = getHeaderCaseInsensitive(req.headers, 'X-Replicated-Signature');
 
         if (String.isBlank(signature)) {
             res.statusCode = 401;
@@ -55,7 +55,7 @@ global class ReplicatedWebhookReceiver {
 
         String eventType = (String) payload.get('event');
         Map<String, Object> data = (Map<String, Object>) payload.get('data');
-        String customerId = (data != null) ? (String) data.get('customer_id') : null;
+        String customerId = (data != null) ? WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id')) : null;
 
         if (String.isBlank(eventType)) {
             res.statusCode = 400;
@@ -104,6 +104,22 @@ global class ReplicatedWebhookReceiver {
             result |= a.charAt(i) ^ b.charAt(i);
         }
         return result == 0;
+    }
+
+    private static String getHeaderCaseInsensitive(Map<String, String> headers, String name) {
+        // Salesforce preserves the original casing from the HTTP request,
+        // so header map keys may not match the expected casing.
+        String value = headers.get(name);
+        if (value != null) {
+            return value;
+        }
+        String lowerName = name.toLowerCase();
+        for (String key : headers.keySet()) {
+            if (key.toLowerCase() == lowerName) {
+                return headers.get(key);
+            }
+        }
+        return null;
     }
 
     @TestVisible

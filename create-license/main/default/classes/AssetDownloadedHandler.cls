@@ -27,7 +27,7 @@ public without sharing class AssetDownloadedHandler implements Queueable {
                 continue;
             }
 
-            String customerId = (String) data.get('customer_id');
+            String customerId = WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id'));
             if (String.isBlank(customerId)) {
                 continue;
             }
@@ -57,7 +57,7 @@ public without sharing class AssetDownloadedHandler implements Queueable {
         Set<String> paidAppIds = new Set<String>();
 
         for (Map<String, Object> data : dataList) {
-            String customerId = (String) data.get('customer_id');
+            String customerId = WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id'));
             Account acc = accountsByCustomerId.get(customerId);
             if (acc == null) {
                 System.debug(LoggingLevel.WARN,
@@ -159,7 +159,7 @@ public without sharing class AssetDownloadedHandler implements Queueable {
         Set<Id> updatedOrderIds = new Set<Id>();
 
         for (Map<String, Object> data : paidEvents) {
-            String customerId = (String) data.get('customer_id');
+            String customerId = WebhookPayloadUtils.parseCustomerId((String) data.get('customer_id'));
             Account acc = accountsByCustomerId.get(customerId);
             if (acc == null) {
                 continue;
