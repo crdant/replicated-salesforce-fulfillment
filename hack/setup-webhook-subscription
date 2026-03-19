@@ -43,5 +43,5 @@ body=$(jq -n \
   }')
 
 result=$(replicated api post /v3/notification_subscription -b "$body")
-id=$(echo "$result" | jq -r '.subscription.id')
+id=$(echo "$result" | jq -r '.id')
 echo "Created subscription \"${SUBSCRIPTION_NAME}\" (id: ${id})."
