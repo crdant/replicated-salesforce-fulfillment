@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    echo "Usage: $0 -o ORG_ALIAS -t TOKEN"
+    echo ""
+    echo "Populates the Replicated_Vendor_Portal Named Credential principal"
+    echo "with the API token via the Connect REST API."
+    exit 1
+}
+
+ORG_ALIAS=""
+TOKEN=""
+
+while getopts ":o:t:" opt; do
+  case $opt in
+    o)
+      ORG_ALIAS=$OPTARG
+      ;;
+    t)
+      TOKEN=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      usage
+      ;;
+  esac
+done
+
+if [ -z "$ORG_ALIAS" ]; then
+    echo "Error: Org alias is required."
+    usage
+fi
+
+if [ -z "$TOKEN" ]; then
+    echo "Error: API token is required."
+    usage
+fi
+
+# Get the org's instance URL and access token via sf cli
+ORG_INFO=$(sf org display --target-org "$ORG_ALIAS" --json)
+INSTANCE_URL=$(echo "$ORG_INFO" | jq -r '.result.instanceUrl')
+ACCESS_TOKEN=$(echo "$ORG_INFO" | jq -r '.result.accessToken')
+
+if [ -z "$INSTANCE_URL" ] || [ "$INSTANCE_URL" = "null" ]; then
+    echo "Error: Could not retrieve instance URL for org '$ORG_ALIAS'."
+    exit 1
+fi
+
+if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+    echo "Error: Could not retrieve access token for org '$ORG_ALIAS'."
+    exit 1
+fi
+
+API_URL="${INSTANCE_URL}/services/data/v61.0/named-credentials/credential"
+
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$API_URL" \
+    -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d @- <<EOF
+{
+    "externalCredential": "Replicated_Vendor_Portal",
+    "principalName": "NamedPrincipal",
+    "principalType": "NamedPrincipal",
+    "credentials": {
+        "ApiToken": {
+            "value": "${TOKEN}",
+            "encrypted": true
+        }
+    }
+}
+EOF
+)
+
+HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
+
+if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+    echo "API token set successfully on Named Credential principal."
+else
+    echo "Error setting API token (HTTP ${HTTP_CODE}):"
+    echo "$BODY"
+    exit 1
+fi

@@ -5,14 +5,7 @@ public without sharing class ReplicatedFulfillment implements Queueable, Databas
 
     public ReplicatedFulfillment(OrderTerms terms) {
         this.terms = terms;
-        Replicated_Vendor_Portal_API_Credential__mdt defaultCredential = [
-            SELECT ApiToken__c
-            FROM Replicated_Vendor_Portal_API_Credential__mdt
-            WHERE DeveloperName = 'Default'
-            LIMIT 1
-        ];
-
-        this.platform = new ReplicatedPlatform(defaultCredential);
+        this.platform = new ReplicatedPlatform();
     }
 
     private void setLicenseId(String licenseId) {

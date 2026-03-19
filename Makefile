@@ -1,13 +1,16 @@
 ORG_ALIAS ?= shortrib
 
 deploy:
-	sf project deploy start --manifest package.xml -o "$(ORG_ALIAS)"
+	sf project deploy start --manifest package.xml --post-destructive-changes create-license/main/default/destructiveChangesPost.xml -o "$(ORG_ALIAS)"
+
+permissions:
+	sf org assign permset --name Replicated_API_Access --target-org "$(ORG_ALIAS)"
 
 retrieve:
 	sf project retrieve start --manifest package.xml -o "$(ORG_ALIAS)"
 
 credentials:
-	echo "ReplicatedCredentialManager.setApiToken('${REPLICATED_SERVICE_ACCOUNT_TOKEN}');" | sf apex run --target-org "$(ORG_ALIAS)"
+	hack/set-api-token -o "$(ORG_ALIAS)" -t "${REPLICATED_SERVICE_ACCOUNT_TOKEN}"
 
 webhook-secret:
 	hack/set-webhook-secret -o "$(ORG_ALIAS)" -s "${REPLICATED_WEBHOOK_SECRET}"
