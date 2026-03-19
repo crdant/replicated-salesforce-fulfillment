@@ -35,6 +35,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Account.Replicated_License_Expiry__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Lead.Replicated_Customer_Id__c</field>
         <readable>false</readable>
     </fieldPermissions>
