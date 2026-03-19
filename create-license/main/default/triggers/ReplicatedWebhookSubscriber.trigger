@@ -6,6 +6,7 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
     List<Replicated_Webhook__e> signupEvents = new List<Replicated_Webhook__e>();
     List<Replicated_Webhook__e> customerCreatedEvents = new List<Replicated_Webhook__e>();
     List<Replicated_Webhook__e> customerUpdatedEvents = new List<Replicated_Webhook__e>();
+    List<Replicated_Webhook__e> epUserJoinedEvents = new List<Replicated_Webhook__e>();
     List<Replicated_Webhook__e> assetDownloadedEvents = new List<Replicated_Webhook__e>();
 
     for (Replicated_Webhook__e event : Trigger.New) {
@@ -31,6 +32,9 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
             when 'customer.updated' {
                 customerUpdatedEvents.add(event);
             }
+            when 'customer.ep_user_joined' {
+                epUserJoinedEvents.add(event);
+            }
             when 'release.asset_downloaded' {
                 assetDownloadedEvents.add(event);
             }
@@ -54,6 +58,9 @@ trigger ReplicatedWebhookSubscriber on Replicated_Webhook__e (after insert) {
     }
     if (!customerUpdatedEvents.isEmpty()) {
         System.enqueueJob(new CustomerUpdatedHandler(customerUpdatedEvents));
+    }
+    if (!epUserJoinedEvents.isEmpty()) {
+        System.enqueueJob(new EpUserJoinedHandler(epUserJoinedEvents));
     }
     if (!assetDownloadedEvents.isEmpty()) {
         System.enqueueJob(new AssetDownloadedHandler(assetDownloadedEvents));

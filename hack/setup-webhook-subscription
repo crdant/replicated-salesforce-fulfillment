@@ -31,6 +31,7 @@ body=$(jq -n \
       { eventType: "customer.created",                   filters: {} },
       { eventType: "customer.updated",                   filters: {} },
       { eventType: "customer.license_expiring",          filters: {} },
+      { eventType: "customer.ep_user_joined",                filters: {} },
       { eventType: "customer.pending_signup",               filters: {} },
       { eventType: "release.asset_downloaded",               filters: {} },
       { eventType: "instance.created",                   filters: {} },
