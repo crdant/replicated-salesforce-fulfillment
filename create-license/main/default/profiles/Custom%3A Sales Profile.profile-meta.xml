@@ -120,11 +120,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>Replicated_Download__c.Downloaded_At__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>false</editable>
         <field>Replicated_Download__c.License_Type__c</field>
         <readable>true</readable>
     </fieldPermissions>

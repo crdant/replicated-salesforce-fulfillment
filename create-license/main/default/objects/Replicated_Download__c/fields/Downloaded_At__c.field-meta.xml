@@ -4,6 +4,6 @@
     <description>Timestamp of the asset download</description>
     <externalId>false</externalId>
     <label>Downloaded At</label>
-    <required>false</required>
+    <required>true</required>
     <type>DateTime</type>
 </CustomField>
