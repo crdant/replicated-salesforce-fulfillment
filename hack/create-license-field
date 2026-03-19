@@ -21,7 +21,7 @@ output=$(replicated api post "/v3/app/$app_id/license-field" \
   2>&1) && {
     echo "Created license field member_count_max"
 } || {
-    echo "$output" | grep -qi "already exists" && \
+    echo "$output" | grep -qiE "already exists|has to be unique" && \
         echo "Field member_count_max already exists" || \
         { echo "Error: Failed to create license field: $output" >&2; exit 1; }
 }

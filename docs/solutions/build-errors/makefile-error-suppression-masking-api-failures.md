@@ -72,7 +72,7 @@ output=$(replicated api post "/v3/app/$app_id/license-field" \
   2>&1) && {
     echo "Created license field member_count_max"
 } || {
-    echo "$output" | grep -qi "already exists" && \
+    echo "$output" | grep -qiE "already exists|has to be unique" && \
         echo "Field member_count_max already exists" || \
         { echo "Error: Failed to create license field: $output" >&2; exit 1; }
 }
@@ -110,7 +110,7 @@ For operations that should succeed whether the resource exists or not:
 
 1. Capture both stdout and stderr: `output=$(command 2>&1)`
 2. Check success path first: `&& { echo "Created"; }`
-3. On failure, inspect output for the expected error: `grep -qi "already exists"`
+3. On failure, inspect output for the expected error: `grep -qiE "already exists|has to be unique"`
 4. If it's the expected error, report idempotent success
 5. If it's anything else, surface the real error to stderr and exit non-zero
 
