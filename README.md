@@ -169,6 +169,18 @@ metadata and setting up your Salesforce Site.
    This runs `channels`, `enterprise-portal`, `entitlements`, and
    `webhook-subscription` in sequence.
 
+3. Verify the configuration:
+   ```
+   make verify
+   ```
+   This confirms the Replicated app metadata resolves correctly and the
+   webhook endpoint responds to a test payload.
+
+4. To tear down Replicated webhook resources:
+   ```
+   make replicated-clean
+   ```
+
 ## Salesforce Site Setup
 
 A Salesforce Site is required to expose the webhook endpoint publicly so
@@ -208,7 +220,9 @@ The provided Makefile includes several useful commands:
 - `make retrieve`: Retrieve the latest metadata from your Salesforce org.
 - `make credentials`: Set the Replicated API token in your org.
 - `make setup-replicated`: Configure all Replicated Platform resources in one step.
+- `make verify`: Verify Replicated app metadata and webhook endpoint.
 - `make clean`: Clean up data in your org (use with caution).
+- `make replicated-clean`: Remove Replicated webhook subscription.
 - `make import`: Import sample data into your org.
 
 ## Troubleshooting

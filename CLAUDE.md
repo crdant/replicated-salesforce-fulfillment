@@ -26,6 +26,8 @@ make credentials           # Set Replicated API token
 make setup-replicated      # Configure all Replicated Platform resources (channels, portal, entitlements, webhooks)
 make channels              # Create or verify Replicated release channel (needs REPLICATED_APP, REPLICATED_CHANNEL)
 make webhook-subscription  # Create Replicated webhook subscription (needs REPLICATED_SITE_URL, REPLICATED_WEBHOOK_SECRET)
+make verify                # Verify Replicated app metadata and webhook endpoint
+make replicated-clean      # Remove Replicated webhook subscription
 make import                # Import sample data
 make clean                 # Clean up org data (use with caution)
 ```
