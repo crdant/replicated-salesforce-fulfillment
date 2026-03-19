@@ -8,11 +8,11 @@ private class AssetDownloadedHandlerTest {
             'email' => email
         };
         Map<String, Object> payload = new Map<String, Object>{
-            'event' => 'Release Assets Downloaded',
+            'event' => 'release.asset_downloaded',
             'data' => data
         };
         return new Replicated_Webhook__e(
-            Event_Type__c = 'Release Assets Downloaded',
+            Event_Type__c = 'release.asset_downloaded',
             Payload__c = JSON.serialize(payload)
         );
     }
@@ -163,7 +163,7 @@ private class AssetDownloadedHandlerTest {
     @IsTest
     static void testMalformedPayloadSkipped() {
         Replicated_Webhook__e event = new Replicated_Webhook__e(
-            Event_Type__c = 'Release Assets Downloaded',
+            Event_Type__c = 'release.asset_downloaded',
             Payload__c = 'not valid json'
         );
 

@@ -7,11 +7,11 @@ private class TrialSignupHandlerTest {
             'email' => email
         };
         Map<String, Object> payload = new Map<String, Object>{
-            'event' => 'Pending Self-Service Signup',
+            'event' => 'customer.pending_signup',
             'data' => data
         };
         return new Replicated_Webhook__e(
-            Event_Type__c = 'Pending Self-Service Signup',
+            Event_Type__c = 'customer.pending_signup',
             Payload__c = JSON.serialize(payload)
         );
     }
@@ -92,7 +92,7 @@ private class TrialSignupHandlerTest {
     @IsTest
     static void testMalformedPayloadSkipped() {
         Replicated_Webhook__e event = new Replicated_Webhook__e(
-            Event_Type__c = 'Pending Self-Service Signup',
+            Event_Type__c = 'customer.pending_signup',
             Payload__c = 'not valid json'
         );
 
