@@ -34,7 +34,7 @@ Salesforce deployment failed because explicit `<fieldPermissions>` entries exist
 
 ## Root Cause
 
-PR #25 (commit `919a948`, "Add field-level security for Replicated_Instance__c fields") added `<fieldPermissions>` blocks for all 10 custom fields on `Replicated_Instance__c` across 6 profiles. The implementation iterated over all fields without checking whether each field was eligible for explicit FLS. `Instance_Id__c` has `<required>true</required>` and is a Text field (not a Lookup), making it ineligible.
+PR #25 (commit `919a948`, "Add field-level security for Replicated_Instance__c fields") added `<fieldPermissions>` blocks for all 10 custom fields on `Replicated_Instance__c` across 6 profiles. The implementation iterated over all fields without checking whether each field was eligible for explicit FLS. `Instance_Id__c` has `<required>true</required>`, making it ineligible — Salesforce rejects explicit FLS for all required fields regardless of type.
 
 The field definition:
 
@@ -57,12 +57,11 @@ Required fields in Salesforce (those with `<required>true</required>`) follow sp
 
 | Field Type | Required? | Explicit FLS Allowed? | Visibility |
 |------------|-----------|----------------------|------------|
-| Text, Number, Picklist, etc. | `true` | No — deployment rejected | Implicit read for all profiles |
-| Lookup (relationship) | `true` | Yes | Configurable per profile |
+| Any type (Text, Number, Lookup, etc.) | `true` | No — deployment rejected | Implicit read for all profiles |
 | Any type | `false` | Yes | Configurable per profile |
 | Formula, Roll-up Summary | any | No | Follows source field visibility |
 
-Required non-Lookup fields get automatic visibility at the platform level. You cannot restrict a required field's visibility through profile-level FLS — Salesforce enforces this during metadata deployment validation.
+Required fields get automatic visibility at the platform level regardless of field type. You cannot restrict a required field's visibility through profile-level FLS — Salesforce enforces this during metadata deployment validation. This applies equally to Lookup/relationship fields and non-Lookup fields.
 
 ## Solution
 
@@ -109,9 +108,8 @@ make deploy
 When adding `<fieldPermissions>` to profiles for a new field, first check the field definition:
 
 1. Open the `.field-meta.xml` file
-2. If `<required>true</required>` AND the type is NOT Lookup → do NOT add FLS entries
-3. If `<required>true</required>` AND the type IS Lookup → FLS entries are allowed
-4. If `<required>false</required>` → FLS entries are required for all profiles
+2. If `<required>true</required>` → do NOT add FLS entries (regardless of field type, including Lookups)
+3. If `<required>false</required>` → FLS entries are required for all profiles
 
 ### PR review checklist
 
@@ -119,7 +117,7 @@ When reviewing a PR that modifies profile metadata:
 
 - [ ] Are new `<fieldPermissions>` entries being added?
 - [ ] For each new entry, has the field definition been checked?
-- [ ] Are any fields `<required>true</required>` with a non-Lookup type? If so, FLS entries must be removed.
+- [ ] Are any fields `<required>true</required>`? If so, FLS entries must be removed (all required fields, including Lookups).
 - [ ] Field count in `objects/` matches fieldPermissions count per profile (minus required non-Lookup fields)?
 
 ### Document the constraint in field metadata
@@ -137,16 +135,15 @@ For required fields, state the FLS expectation in the field description:
 ### Pre-deployment validation
 
 ```bash
-# Find required non-Lookup fields
+# Find required fields (any type — Salesforce rejects FLS for all required fields)
 for f in create-license/main/default/objects/*/fields/*.field-meta.xml; do
   is_required=$(grep -c '<required>true</required>' "$f" 2>/dev/null || echo 0)
-  is_lookup=$(grep -c '<type>Lookup</type>' "$f" 2>/dev/null || echo 0)
-  if [ "$is_required" -eq 1 ] && [ "$is_lookup" -eq 0 ]; then
+  if [ "$is_required" -eq 1 ]; then
     field=$(grep -oP '(?<=<fullName>)[^<]+' "$f")
     object=$(basename "$(dirname "$(dirname "$f")")")
     # Check if any profile has FLS for this field
     if grep -rq "${object}.${field}" create-license/main/default/profiles/; then
-      echo "ERROR: ${object}.${field} is required non-Lookup but has FLS entries"
+      echo "ERROR: ${object}.${field} is required but has FLS entries"
     fi
   fi
 done
