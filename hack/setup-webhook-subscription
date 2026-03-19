@@ -31,8 +31,8 @@ body=$(jq -n \
       { eventType: "customer.created",                   filters: {} },
       { eventType: "customer.updated",                   filters: {} },
       { eventType: "customer.license_expiring",          filters: {} },
-      { eventType: "customer.pending_self_service_signup", filters: {} },
-      { eventType: "release.assets_downloaded",          filters: {} },
+      { eventType: "customer.pending_signup",               filters: {} },
+      { eventType: "release.asset_downloaded",               filters: {} },
       { eventType: "instance.created",                   filters: {} },
       { eventType: "instance.upgrade_completed",         filters: {} },
       { eventType: "instance.inactive",                  filters: {} }
@@ -43,11 +43,5 @@ body=$(jq -n \
   }')
 
 result=$(replicated api post /v3/notification_subscription -b "$body")
-id=$(echo "$result" | jq -r '.subscription.id // .id // empty')
-
-if [ -n "$id" ]; then
-    echo "Created subscription \"${SUBSCRIPTION_NAME}\" (id: ${id})."
-else
-    echo "Created subscription \"${SUBSCRIPTION_NAME}\"."
-    echo "$result" | jq .
-fi
+id=$(echo "$result" | jq -r '.subscription.id')
+echo "Created subscription \"${SUBSCRIPTION_NAME}\" (id: ${id})."

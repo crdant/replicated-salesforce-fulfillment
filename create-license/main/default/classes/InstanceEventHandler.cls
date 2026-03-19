@@ -71,7 +71,7 @@ public without sharing class InstanceEventHandler implements Queueable {
                 instance.First_Check_In__c = parseDateTime((String) data.get('created_at'));
                 instance.Last_Check_In__c = parseDateTime((String) data.get('last_check_in'));
                 instance.Name = buildInstanceName(instanceId, (String) data.get('customer_name'));
-            } else if (event.Event_Type__c == 'instance.upgraded') {
+            } else if (event.Event_Type__c == 'instance.upgrade_completed') {
                 instance.App_Version__c = (String) data.get('app_version');
                 instance.Last_Check_In__c = DateTime.now();
             } else if (event.Event_Type__c == 'instance.inactive') {

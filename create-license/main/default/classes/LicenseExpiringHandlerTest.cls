@@ -14,14 +14,14 @@ private class LicenseExpiringHandlerTest {
 
     private static Replicated_Webhook__e buildEvent(String payload) {
         return new Replicated_Webhook__e(
-            Event_Type__c = 'customer.license.expiring',
+            Event_Type__c = 'customer.license_expiring',
             Customer_Id__c = CUSTOMER_ID,
             Payload__c = payload
         );
     }
 
     private static String expiringPayload(String expiresAt) {
-        return '{"event":"customer.license.expiring","data":{' +
+        return '{"event":"customer.license_expiring","data":{' +
             '"customer_id":"' + CUSTOMER_ID + '",' +
             '"customer_name":"Acme Corp",' +
             '"expires_at":"' + expiresAt + '"' +
@@ -79,7 +79,7 @@ private class LicenseExpiringHandlerTest {
     @IsTest
     static void testNoMatchingAccount() {
         String unknownCustomerId = 'cust-unknown-999';
-        String payload = '{"event":"customer.license.expiring","data":{' +
+        String payload = '{"event":"customer.license_expiring","data":{' +
             '"customer_id":"' + unknownCustomerId + '",' +
             '"customer_name":"Unknown Corp",' +
             '"expires_at":"2026-04-15"' +
@@ -89,7 +89,7 @@ private class LicenseExpiringHandlerTest {
         System.enqueueJob(new LicenseExpiringHandler(
             new List<Replicated_Webhook__e>{
                 new Replicated_Webhook__e(
-                    Event_Type__c = 'customer.license.expiring',
+                    Event_Type__c = 'customer.license_expiring',
                     Customer_Id__c = unknownCustomerId,
                     Payload__c = payload
                 )
@@ -103,7 +103,7 @@ private class LicenseExpiringHandlerTest {
 
     @IsTest
     static void testMissingCustomerNameFallsBackToAccountName() {
-        String payload = '{"event":"customer.license.expiring","data":{' +
+        String payload = '{"event":"customer.license_expiring","data":{' +
             '"customer_id":"' + CUSTOMER_ID + '",' +
             '"expires_at":"2026-04-15"' +
             '}}';
@@ -123,7 +123,7 @@ private class LicenseExpiringHandlerTest {
 
     @IsTest
     static void testMissingExpiresAt() {
-        String payload = '{"event":"customer.license.expiring","data":{' +
+        String payload = '{"event":"customer.license_expiring","data":{' +
             '"customer_id":"' + CUSTOMER_ID + '",' +
             '"customer_name":"Acme Corp"' +
             '}}';
@@ -145,7 +145,7 @@ private class LicenseExpiringHandlerTest {
 
     @IsTest
     static void testMissingDataInPayload() {
-        String payload = '{"event":"customer.license.expiring"}';
+        String payload = '{"event":"customer.license_expiring"}';
 
         Test.startTest();
         System.enqueueJob(new LicenseExpiringHandler(
