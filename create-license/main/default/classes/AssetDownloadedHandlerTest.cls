@@ -159,4 +159,19 @@ private class AssetDownloadedHandlerTest {
         System.assertEquals(1, accounts.size(), 'Should create Account with default name');
         System.assertEquals('Unknown', accounts[0].Name);
     }
+
+    @IsTest
+    static void testMalformedPayloadSkipped() {
+        Replicated_Webhook__e event = new Replicated_Webhook__e(
+            Event_Type__c = 'Release Assets Downloaded',
+            Payload__c = 'not valid json'
+        );
+
+        Test.startTest();
+        System.enqueueJob(new AssetDownloadedHandler(new List<Replicated_Webhook__e>{ event }));
+        Test.stopTest();
+
+        List<Account> accounts = [SELECT Id FROM Account];
+        System.assertEquals(0, accounts.size(), 'Should not create records from malformed payload');
+    }
 }

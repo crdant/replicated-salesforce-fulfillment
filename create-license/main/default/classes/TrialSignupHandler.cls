@@ -13,19 +13,28 @@ public without sharing class TrialSignupHandler implements Queueable {
         Set<String> emails = new Set<String>();
 
         for (Replicated_Webhook__e event : this.events) {
-            Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(event.Payload__c);
-            Map<String, Object> data = (Map<String, Object>) parsed.get('data');
+            Map<String, Object> data;
+            try {
+                Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(event.Payload__c);
+                data = (Map<String, Object>) parsed.get('data');
+            } catch (Exception e) {
+                System.debug(LoggingLevel.WARN, 'TrialSignupHandler: malformed payload, skipping');
+                continue;
+            }
 
             if (data == null) {
                 System.debug(LoggingLevel.WARN, 'TrialSignupHandler: missing data in payload');
                 continue;
             }
 
-            dataList.add(data);
             String email = (String) data.get('email');
-            if (String.isNotBlank(email)) {
-                emails.add(email);
+            if (String.isBlank(email)) {
+                System.debug(LoggingLevel.WARN, 'TrialSignupHandler: blank email, skipping');
+                continue;
             }
+
+            dataList.add(data);
+            emails.add(email);
         }
 
         // Single SOQL: find all existing unconverted Leads by email.
@@ -38,7 +47,7 @@ public without sharing class TrialSignupHandler implements Queueable {
         List<Lead> toInsert = new List<Lead>();
         for (Map<String, Object> data : dataList) {
             String email = (String) data.get('email');
-            if (String.isNotBlank(email) && existingEmails.contains(email)) {
+            if (existingEmails.contains(email)) {
                 continue;
             }
 
@@ -52,9 +61,7 @@ public without sharing class TrialSignupHandler implements Queueable {
             ));
 
             // Track email so later events in the same batch don't duplicate.
-            if (String.isNotBlank(email)) {
-                existingEmails.add(email);
-            }
+            existingEmails.add(email);
         }
 
         if (!toInsert.isEmpty()) {

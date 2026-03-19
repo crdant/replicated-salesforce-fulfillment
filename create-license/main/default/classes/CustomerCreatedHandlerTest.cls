@@ -140,4 +140,19 @@ private class CustomerCreatedHandlerTest {
         System.assertEquals('cust_noexp', updated.Replicated_Customer_Id__c);
         System.assertEquals(null, updated.Replicated_License_Expiry__c);
     }
+
+    @IsTest
+    static void testMalformedPayloadSkipped() {
+        Replicated_Webhook__e event = new Replicated_Webhook__e(
+            Event_Type__c = 'customer.created',
+            Payload__c = 'not valid json'
+        );
+
+        Test.startTest();
+        System.enqueueJob(new CustomerCreatedHandler(new List<Replicated_Webhook__e>{ event }));
+        Test.stopTest();
+
+        List<Lead> leads = [SELECT Id FROM Lead];
+        System.assertEquals(0, leads.size(), 'Should not create a Lead from malformed payload');
+    }
 }

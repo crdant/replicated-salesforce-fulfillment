@@ -13,8 +13,14 @@ public without sharing class AssetDownloadedHandler implements Queueable {
         Set<String> customerIds = new Set<String>();
 
         for (Replicated_Webhook__e event : this.events) {
-            Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(event.Payload__c);
-            Map<String, Object> data = (Map<String, Object>) parsed.get('data');
+            Map<String, Object> data;
+            try {
+                Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(event.Payload__c);
+                data = (Map<String, Object>) parsed.get('data');
+            } catch (Exception e) {
+                System.debug(LoggingLevel.WARN, 'AssetDownloadedHandler: malformed payload, skipping');
+                continue;
+            }
 
             if (data == null) {
                 System.debug(LoggingLevel.WARN, 'AssetDownloadedHandler: missing data in payload');
@@ -111,7 +117,7 @@ public without sharing class AssetDownloadedHandler implements Queueable {
 
             if (!result.isSuccess()) {
                 System.debug(LoggingLevel.ERROR,
-                    'AssetDownloadedHandler: Lead conversion failed for Lead ' + leads[i].Id);
+                    'AssetDownloadedHandler: Lead conversion failed');
                 continue;
             }
 
@@ -172,6 +178,9 @@ public without sharing class AssetDownloadedHandler implements Queueable {
                 ));
             }
             insert contacts;
+            for (Contact c : contacts) {
+                SyncGuard.inboundSyncIds.add(c.Id);
+            }
 
             // Phase 3: Create Opportunities linked to their Accounts.
             List<Opportunity> opps = new List<Opportunity>();
@@ -187,6 +196,9 @@ public without sharing class AssetDownloadedHandler implements Queueable {
                 ));
             }
             insert opps;
+            for (Opportunity opp : opps) {
+                SyncGuard.inboundSyncIds.add(opp.Id);
+            }
         } catch (DmlException e) {
             Database.rollback(sp);
             System.debug(LoggingLevel.ERROR,

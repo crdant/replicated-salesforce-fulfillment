@@ -76,7 +76,7 @@ private class TrialSignupHandlerTest {
     }
 
     @IsTest
-    static void testNullEmailStillCreatesLead() {
+    static void testBlankEmailSkipped() {
         List<Replicated_Webhook__e> events = new List<Replicated_Webhook__e>{
             buildEvent('No Email Corp', null)
         };
@@ -85,8 +85,23 @@ private class TrialSignupHandlerTest {
         System.enqueueJob(new TrialSignupHandler(events));
         Test.stopTest();
 
-        List<Lead> leads = [SELECT Id, LastName FROM Lead WHERE Company = 'No Email Corp'];
-        System.assertEquals(1, leads.size(), 'Should create a Lead even without email');
+        List<Lead> leads = [SELECT Id FROM Lead WHERE Company = 'No Email Corp'];
+        System.assertEquals(0, leads.size(), 'Should not create a Lead without email');
+    }
+
+    @IsTest
+    static void testMalformedPayloadSkipped() {
+        Replicated_Webhook__e event = new Replicated_Webhook__e(
+            Event_Type__c = 'Pending Self-Service Signup',
+            Payload__c = 'not valid json'
+        );
+
+        Test.startTest();
+        System.enqueueJob(new TrialSignupHandler(new List<Replicated_Webhook__e>{ event }));
+        Test.stopTest();
+
+        List<Lead> leads = [SELECT Id FROM Lead];
+        System.assertEquals(0, leads.size(), 'Should not create a Lead from malformed payload');
     }
 
     @IsTest

@@ -13,8 +13,14 @@ public without sharing class CustomerCreatedHandler implements Queueable {
         Set<String> emails = new Set<String>();
 
         for (Replicated_Webhook__e event : this.events) {
-            Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(event.Payload__c);
-            Map<String, Object> data = (Map<String, Object>) parsed.get('data');
+            Map<String, Object> data;
+            try {
+                Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(event.Payload__c);
+                data = (Map<String, Object>) parsed.get('data');
+            } catch (Exception e) {
+                System.debug(LoggingLevel.WARN, 'CustomerCreatedHandler: malformed payload, skipping');
+                continue;
+            }
 
             if (data == null) {
                 System.debug(LoggingLevel.WARN, 'CustomerCreatedHandler: missing data in payload');
