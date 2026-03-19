@@ -9,9 +9,11 @@ set -euo pipefail
 : "${REPLICATED_CHANNEL:?REPLICATED_CHANNEL is not set}"
 
 replicated app ls --output json | jq -e --arg app "$REPLICATED_APP" --arg channel "$REPLICATED_CHANNEL" \
-  '[.[] | select(.app.slug == $app)] | first
+  '  [.[] | select(.app.slug == $app)] | first
+     // error("App \($app) not found")
    | {
        app_name: .app.name,
        app_id: .app.id,
-       channel_id: ([.channels[] | select(.channelSlug == $channel) | .id] | first)
+       channel_id: ([.channels[] | select(.channelSlug == $channel) | .id] | first
+                    // error("Channel \($channel) not found for app \($app)"))
      }'
